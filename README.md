@@ -22,16 +22,11 @@ brew install <formula>
 
 | 名称 | 用途 | 备注 |
 | --- | --- | --- |
-| `class-dump` | 从 Mach-O 文件生成 Objective-C 头文件 | macOS |
 | `codex-remote` | 手动让 ChatGPT Desktop 复用 Codex managed app-server | macOS、手动运行 |
 | `dotfiles` | 使用 ncdu 记录磁盘占用快照 | 依赖 `ncdu` |
 | `ds_store` | 查找、清理并监控 `.DS_Store` 文件 | 支持 Homebrew Services |
-| `insert_dylib` | 向 Mach-O 文件插入 dylib load command | macOS、需要 Xcode 构建 |
 | `iproxy-ssh` | 通过 USB 将本地 2222 端口转发到设备 SSH 端口 | 支持 Homebrew Services |
-| `iterm2-zssh` | 在 iTerm2 中通过 ZMODEM 收发文件 | 依赖 `lrzsz` |
 | `lockscreen` | 从命令行锁定当前 macOS 会话 | macOS |
-| `optool` | 编辑 Mach-O load command | 仅 Intel macOS |
-| `restore-symbol` | 恢复 Mach-O 文件中的符号 | macOS |
 | `scaletail` | 以 `scaletail`/`scaletaild` 命令名安装 Tailscale | 基于官方 Tailscale 源码 |
 
 启动或停止服务：
@@ -67,7 +62,7 @@ brew audit --strict --online --tap=omzcj/omzcj
 brew test <formula>
 ```
 
-`class-dump`、`dotfiles`、`ds_store`、`iterm2-zssh` 和 `lockscreen` 由各自仓库的
+`dotfiles`、`ds_store` 和 `lockscreen` 由各自仓库的
 `VERSION` 文件控制版本。修改发布内容时同步更新 `VERSION`，推送到默认分支后，
 GitHub Actions 会先验证构建，再自动创建 tag、Release、发布资源和 SHA-256 文件。
 
@@ -85,11 +80,5 @@ Tap 每天检查一次这些 Release，并通过 Homebrew `bump-packages` 自动
 日期版本，GitHub Release 和 Cask 使用完整版本。
 首次运行可能需要在“系统设置 → 隐私与安全性”中选择“仍要打开”，之后还需授予辅助功能
 权限。它同样由 Autobump 检查 GitHub Release 并创建 Cask 更新 PR。
-
-首次启用时按以下顺序推送，避免 Formula 暂时引用还不存在的资源：
-
-1. 先分别推送上述五个上游仓库，等待 Release 工作流全部完成。
-2. 确认四个 `v2026.07.16` 源码 Release 和 `class-dump` 的 `3.6.2` 二进制 Release 已生成。
-3. 最后推送本 Tap；之后的版本更新由 Autobump PR 处理。
 
 Pull Request 会通过 GitHub Actions 在 Intel macOS、Apple Silicon macOS 和 Linux 上运行 BrewTestBot。

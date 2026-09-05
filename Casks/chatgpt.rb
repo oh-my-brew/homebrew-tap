@@ -14,8 +14,6 @@ cask "chatgpt" do
     skip "Pinned to the validated ChatGPT release"
   end
 
-  no_autobump! because: "This cask intentionally tracks a fixed ChatGPT release"
-
   auto_updates true
   depends_on macos: :ventura
 

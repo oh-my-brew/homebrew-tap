@@ -22,7 +22,7 @@ brew install <formula>
 
 | 名称 | 用途 | 备注 |
 | --- | --- | --- |
-| `codex-remote` | 手动让 ChatGPT Desktop 复用 Codex managed app-server | macOS、手动运行 |
+| `codex-remote` | 管理 ChatGPT Desktop 对 Codex managed app-server 的复用与恢复 | macOS、手动运行 |
 | `dotfiles` | 使用 ncdu 记录磁盘占用快照 | 依赖 `ncdu` |
 | `ds_store` | 查找、清理并监控 `.DS_Store` 文件 | 支持 Homebrew Services |
 | `iproxy-ssh` | 通过 USB 将本地 2222 端口转发到设备 SSH 端口 | 支持 Homebrew Services |
@@ -39,11 +39,13 @@ brew services start iproxy-ssh
 brew services stop iproxy-ssh
 ```
 
-`codex-remote` 不使用 Homebrew Services 或 LaunchAgent。安装后需要时手动运行：
+`codex-remote` 不使用 Homebrew Services 或 LaunchAgent。无参数运行只读查看状态，需要时显式启用、重置或更新 standalone Codex：
 
 ```sh
 codex-remote
-codex-remote status
+codex-remote enable
+codex-remote reset
+codex-remote update check
 ```
 
 ## Casks

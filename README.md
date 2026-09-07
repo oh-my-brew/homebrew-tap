@@ -40,7 +40,7 @@ brew services stop iproxy-ssh
 ```
 
 `codex-remote` 不使用 Homebrew Services 或常驻 LaunchAgent。无参数运行只读查看状态；日常使用
-`start` 智能修复并启动，`stop` 完全关闭，`restart` 强制重建连接：
+`start` 禁用 ChatGPT 自动更新、智能修复并启动，`stop` 完全关闭，`restart` 强制重建连接：
 
 ```sh
 codex-remote

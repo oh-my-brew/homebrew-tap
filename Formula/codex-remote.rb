@@ -1,8 +1,8 @@
 class CodexRemote < Formula
   desc "Manage ChatGPT Desktop reuse of the Codex managed app-server"
   homepage "https://github.com/omzcj/codex-remote"
-  url "https://github.com/omzcj/codex-remote/releases/download/v2026.09.07.4/codex-remote-2026.09.07.4.tar.gz"
-  sha256 "12f2ee9da874b2905f698c3b174a51375b06b3dadf47446e83f707d9e9ab1fb6"
+  url "https://github.com/omzcj/codex-remote/releases/download/v2026.09.07.5/codex-remote-2026.09.07.5.tar.gz"
+  sha256 "2a3eb37d1ee8acf27825a77bae26636ea34d2bc3dd0f24fd63170ccc8594b645"
   license "MIT"
 
   livecheck do
@@ -18,8 +18,10 @@ class CodexRemote < Formula
 
   test do
     assert_match "codex-remote #{version}", shell_output("#{bin}/codex-remote --version")
-    assert_match "Running without a command is read-only", shell_output("#{bin}/codex-remote --help")
-    assert_match "start [--force]", shell_output("#{bin}/codex-remote --help")
-    assert_match "update VERSION", shell_output("#{bin}/codex-remote --help")
+    help_output = shell_output("#{bin}/codex-remote --help")
+    assert_match "Running without a command is read-only", help_output
+    assert_match "start [--force]", help_output
+    assert_match "update VERSION", help_output
+    refute_match(/^\s+(enable|reset)/, help_output)
   end
 end

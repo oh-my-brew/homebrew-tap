@@ -39,12 +39,14 @@ brew services start iproxy-ssh
 brew services stop iproxy-ssh
 ```
 
-`codex-remote` 不使用 Homebrew Services 或 LaunchAgent。无参数运行只读查看状态，需要时显式启用、重置或更新 standalone Codex：
+`codex-remote` 不使用 Homebrew Services 或常驻 LaunchAgent。无参数运行只读查看状态；日常使用
+`start` 智能修复并启动，`stop` 完全关闭，`restart` 强制重建连接：
 
 ```sh
 codex-remote
-codex-remote enable
-codex-remote reset
+codex-remote start
+codex-remote stop
+codex-remote restart
 codex-remote update check
 ```
 

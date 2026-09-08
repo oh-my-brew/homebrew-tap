@@ -39,8 +39,9 @@ brew services start iproxy-ssh
 brew services stop iproxy-ssh
 ```
 
-`codex-remote` 不使用 Homebrew Services 或常驻 LaunchAgent。无参数运行只读查看状态；日常使用
-`start` 禁用 ChatGPT 自动更新、智能修复并启动，`stop` 完全关闭，`restart` 强制重建连接：
+`codex-remote` 不使用 Homebrew Services 或常驻 LaunchAgent。无参数运行只读查看事实；日常使用
+`start` 自动恢复固定 Desktop、统一 Codex、修复 daemon、启用 Remote Control 并打开 ChatGPT，
+`stop` 完全关闭，`restart` 无论当前是否启动都确保停止后重新收敛：
 
 ```sh
 codex-remote

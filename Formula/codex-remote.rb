@@ -1,9 +1,9 @@
 class CodexRemote < Formula
   desc "Manage ChatGPT Desktop reuse of the Codex managed app-server"
   homepage "https://github.com/omzcj/codex-remote"
-  url "https://github.com/omzcj/codex-remote/archive/refs/tags/v2026.09.08.5.tar.gz"
-  version "2026.09.08.5"
-  sha256 "fb034f5db0b1d64b1c57946fbdcf22dae24ed8cd19220c7b3e77c30cec74518c"
+  url "https://github.com/omzcj/codex-remote/archive/refs/tags/v2026.09.08.6.tar.gz"
+  version "2026.09.08.6"
+  sha256 "097bb99ba9e49229b541242d7089dede7dc8fe3937bf9b381a6f905ac7b1fc21"
   license "MIT"
 
   livecheck do

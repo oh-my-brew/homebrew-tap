@@ -22,11 +22,9 @@ brew install <formula>
 
 | 名称 | 用途 | 备注 |
 | --- | --- | --- |
-| `codex-remote` | 管理 ChatGPT Desktop 对 Codex managed app-server 的复用与恢复 | macOS、手动运行 |
-| `dotfiles` | 使用 ncdu 记录磁盘占用快照 | 依赖 `ncdu` |
 | `ds_store` | 查找、清理并监控 `.DS_Store` 文件 | 支持 Homebrew Services |
 | `iproxy-ssh` | 通过 USB 将本地 2222 端口转发到设备 SSH 端口 | 支持 Homebrew Services |
-| `lockscreen` | 从命令行锁定当前 macOS 会话 | macOS |
+| `omcli` | 锁屏、记录磁盘占用快照并管理 Codex remote control | macOS、依赖 `ncdu` |
 | `scaletail` | 以 `scaletail`/`scaletaild` 命令名安装 Tailscale | 基于官方 Tailscale 源码 |
 
 启动或停止服务：
@@ -39,16 +37,32 @@ brew services start iproxy-ssh
 brew services stop iproxy-ssh
 ```
 
-`codex-remote` 不使用 Homebrew Services 或常驻 LaunchAgent。无参数运行只读查看状态；日常使用
-`start` 禁用 ChatGPT 自动更新、智能修复并启动，`stop` 完全关闭，`restart` 强制重建连接：
+安装统一命令行工具：
 
 ```sh
-codex-remote
-codex-remote start
-codex-remote stop
-codex-remote restart
-codex-remote update check
+brew install omzcj/omzcj/omcli
 ```
+
+`omcli` 合并了原来的 `lockscreen`、`dotfiles` 和 `codex-remote`。以下功能命令会直接影响
+当前电脑，不应作为安装验证或自动化测试运行：`omcli lockscreen` 会立即锁定当前 macOS
+会话，`omcli ncdu` 会扫描根目录并写入磁盘占用快照，`omcli codex start/stop/restart/update`
+会改变 ChatGPT Desktop、Codex app-server 或 standalone Codex 的运行和安装状态。
+
+需要使用时手动运行对应入口：
+
+```sh
+omcli lockscreen
+omcli ncdu
+omcli codex status
+omcli codex start
+omcli codex stop
+omcli codex restart
+omcli codex update check
+```
+
+`omcli codex` 不使用 Homebrew Services 或常驻 LaunchAgent。无参数运行 `omcli codex` 等价于
+只读的 `status`；`start` 禁用 ChatGPT 自动更新、智能修复并启动，`stop` 完全关闭，
+`restart` 强制重建连接。
 
 ## Casks
 
@@ -66,9 +80,12 @@ brew audit --strict --online --tap=omzcj/omzcj
 brew test <formula>
 ```
 
-`dotfiles`、`ds_store` 和 `lockscreen` 由各自仓库的
+`omcli` 和 `ds_store` 由各自仓库的
 `VERSION` 文件控制版本。修改发布内容时同步更新 `VERSION`，推送到默认分支后，
 GitHub Actions 会先验证构建，再自动创建 tag、Release、发布资源和 SHA-256 文件。
+
+`omcli` 使用 `YYYY.MM.DD.N` 版本号，其中 `N` 是从 `1` 开始的当日发布序号。它的 Homebrew
+测试只检查顶层版本、帮助和安装文件，不运行上述会影响电脑的功能命令。
 
 Tap 每天检查一次这些 Release，并通过 Homebrew `bump-packages` 自动创建更新 PR。
 启用前需要在仓库 Actions secrets 中添加 `HOMEBREW_BUMP_TOKEN`；它应是仅授权本仓库、

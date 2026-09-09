@@ -32,10 +32,8 @@ jobs:
         with:
           token: ${{ secrets.HOMEBREW_BUMP_TOKEN }}
           formulae: >
-            codex-remote
-            dotfiles
             ds_store
-            lockscreen
+            omcli
             scaletail
           casks: >
             minitools

@@ -24,7 +24,7 @@ brew install <formula>
 | --- | --- | --- |
 | `ds_store` | 查找、清理并监控 `.DS_Store` 文件 | 支持 Homebrew Services |
 | `iproxy-ssh` | 通过 USB 将本地 2222 端口转发到设备 SSH 端口 | 支持 Homebrew Services |
-| `omcli` | 锁屏、记录磁盘占用快照并管理 Codex remote control | macOS、依赖 `ncdu` |
+| `omcli` | 锁屏、记录磁盘占用快照并管理 Codex remote control | Apple Silicon、macOS、依赖 `ncdu` |
 | `scaletail` | 以 `scaletail`/`scaletaild` 命令名安装 Tailscale | 基于官方 Tailscale 源码 |
 
 启动或停止服务：

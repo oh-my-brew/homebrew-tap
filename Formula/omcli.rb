@@ -10,8 +10,8 @@ class Omcli < Formula
     strategy :github_latest
   end
 
-  depends_on :macos
   depends_on arch: :arm64
+  depends_on :macos
   depends_on "ncdu"
 
   def install

@@ -1,8 +1,8 @@
 class Omcli < Formula
   desc "Unified macOS CLI for screen locking, disk snapshots, and Codex"
   homepage "https://github.com/omzcj/omcli"
-  url "https://github.com/omzcj/omcli/releases/download/v2026.09.09.2/omcli-2026.09.09.2.tar.gz"
-  sha256 "6cd2649e49e21848ed906915536f3b32902d54201715de26cae53226f3168447"
+  url "https://github.com/omzcj/omcli/releases/download/v2026.09.10.1/omcli-2026.09.10.1.tar.gz"
+  sha256 "63469d69b44f98ecc6d3196877d633d5bbefca23f35d4eab3fbc184c090f883e"
   license all_of: ["MIT", "Apache-2.0"]
 
   livecheck do

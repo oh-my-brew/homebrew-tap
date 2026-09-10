@@ -1,8 +1,8 @@
 class Omcli < Formula
   desc "Unified macOS CLI for screen locking, disk snapshots, and Codex"
   homepage "https://github.com/omzcj/omcli"
-  url "https://github.com/omzcj/omcli/releases/download/v2026.09.10.1/omcli-2026.09.10.1.tar.gz"
-  sha256 "63469d69b44f98ecc6d3196877d633d5bbefca23f35d4eab3fbc184c090f883e"
+  url "https://github.com/omzcj/omcli/releases/download/v2026.09.11.1/omcli-2026.09.11.1.tar.gz"
+  sha256 "638a29457d0fc5c33861dc2348f1055fb9db3ec1af65a7372788076e4a28bcab"
   license all_of: ["MIT", "Apache-2.0"]
 
   livecheck do
@@ -29,5 +29,6 @@ class Omcli < Formula
     assert_match "lockscreen", cli
     assert_match "ncdu", cli
     assert_match "codex", cli
+    assert_match "xcodex", cli
   end
 end

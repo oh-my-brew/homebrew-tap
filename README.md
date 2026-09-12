@@ -1,20 +1,24 @@
-# homebrew-omzcj
+# homebrew-tap
 
 个人使用的 Homebrew Tap，收录常用命令行工具、macOS 工具和应用。
+
+仓库为 `oh-my-brew/homebrew-tap`，Tap 名为 `oh-my-brew/tap`。共享源码发布
+自动化由 `oh-my-infra/brew-ci` 维护，Apple 发布自动化由
+`oh-my-infra/apple-ci` 维护。仓库改名不改变已有包名、版本或应用 Bundle ID。
 
 ## 安装
 
 直接安装单个 Formula 或 Cask：
 
 ```sh
-brew install omzcj/omzcj/<formula>
-brew install --cask omzcj/omzcj/<cask>
+brew install oh-my-brew/tap/<formula>
+brew install --cask oh-my-brew/tap/<cask>
 ```
 
 也可以先添加 Tap：
 
 ```sh
-brew tap omzcj/omzcj
+brew tap oh-my-brew/tap
 brew install <formula>
 ```
 
@@ -40,7 +44,7 @@ brew services stop iproxy-ssh
 安装统一命令行工具：
 
 ```sh
-brew install omzcj/omzcj/omcli
+brew install oh-my-brew/tap/omcli
 ```
 
 `omcli` 合并了原来的 `lockscreen`、`dotfiles` 和 `codex-remote`。以下功能命令会直接影响
@@ -76,7 +80,7 @@ omcli codex update check
 
 ```sh
 brew style Formula Casks
-brew audit --strict --online --tap=omzcj/omzcj
+brew audit --strict --online --tap=oh-my-brew/tap
 brew test <formula>
 ```
 
@@ -89,14 +93,15 @@ GitHub Actions 会先验证构建，再自动创建 tag、Release、发布资源
 
 Tap 每天检查一次这些 Release，并通过 Homebrew `bump-packages` 自动创建更新 PR。
 启用前需要在仓库 Actions secrets 中添加 `HOMEBREW_BUMP_TOKEN`；它应是仅授权本仓库、
-能推送分支并创建 Pull Request 的 fine-grained PAT。未配置时工作流会安全跳过，不会产生
-失败通知。
+能推送分支并创建 Pull Request 的 fine-grained PAT。组织迁移后应核对该 PAT 的
+resource owner 为 `oh-my-brew`，选定仓库为 `homebrew-tap`；仅凭 secret 名称存在
+不能确认新组织下的访问权限。未配置时工作流会安全跳过，不会产生失败通知。
 
 `scaletail` 直接跟随 Tailscale 官方稳定 tag，通过同一 Autobump 工作流更新，不需要
 单独维护源码仓库。Formula 仅把安装的 CLI、daemon、服务和补全文件改为 `scaletail`
 命名；内部版本信息、协议和网络行为仍属于 Tailscale。
 
-`minitools` 从 `omzcj/miniTools` 的版本标签构建通用 macOS 应用，并以 ad-hoc 签名发布。
+`minitools` 从 `oh-my-brew/miniTools` 的版本标签构建通用 macOS 应用，并以 ad-hoc 签名发布。
 发行版本使用 `YYYY.MM.DD.N`，其中 `N` 是从 `1` 开始的当日发布序号；应用内显示前三段
 日期版本，GitHub Release 和 Cask 使用完整版本。
 首次运行可能需要在“系统设置 → 隐私与安全性”中选择“仍要打开”，之后还需授予辅助功能

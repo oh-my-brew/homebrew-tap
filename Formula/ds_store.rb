@@ -1,7 +1,7 @@
 class DsStore < Formula
   desc "Monitor and remove .DS_Store files"
-  homepage "https://github.com/omzcj/ds_store"
-  url "https://github.com/omzcj/ds_store/releases/download/v2026.08.29.1/ds_store-2026.08.29.1.tar.gz"
+  homepage "https://github.com/oh-my-brew/ds_store"
+  url "https://github.com/oh-my-brew/ds_store/releases/download/v2026.08.29.1/ds_store-2026.08.29.1.tar.gz"
   sha256 "a8136d41859cfff47a50832f39105354334dafb6ea6b094c40ae5d9f80cbf507"
 
   livecheck do

@@ -2,10 +2,10 @@ cask "rustdeskx" do
   version "1.4.9.3"
   sha256 "56264b466f834a5e3b4c312ed44ae02e1626485f96880afb800c6dd317d05260"
 
-  url "https://github.com/omzcj/rustdeskx/releases/download/v#{version}/RustDeskX-#{version}-arm64.zip"
+  url "https://github.com/oh-my-brew/rustdeskx/releases/download/v#{version}/RustDeskX-#{version}-arm64.zip"
   name "RustDeskX"
   desc "Apple Silicon RustDesk rebrand for signed and notarized distribution"
-  homepage "https://github.com/omzcj/rustdeskx"
+  homepage "https://github.com/oh-my-brew/rustdeskx"
 
   livecheck do
     url :url

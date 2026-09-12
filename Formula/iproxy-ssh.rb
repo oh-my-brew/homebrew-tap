@@ -1,7 +1,7 @@
 class IproxySsh < Formula
   desc "Run iproxy 2222:22 for SSH over USB"
-  homepage "https://github.com/omzcj/homebrew-omzcj"
-  url "https://github.com/omzcj/homebrew-omzcj/archive/e34484a58e93d5cdeebda59a292cb9c731d3e66c.tar.gz"
+  homepage "https://github.com/oh-my-brew/homebrew-tap"
+  url "https://github.com/oh-my-brew/homebrew-tap/archive/e34484a58e93d5cdeebda59a292cb9c731d3e66c.tar.gz"
   version "2026.05.28"
   sha256 "bbc1aa63b7d92780359a638a2e017aa07f66f23be0128318066941099892b58b"
 

@@ -35,6 +35,6 @@ cask "chatgpt" do
     disabled after installation. Upgrade only by changing this cask explicitly.
 
     Install this tap's pinned cask with:
-      brew install --cask omzcj/omzcj/chatgpt
+      brew install --cask oh-my-brew/tap/chatgpt
   EOS
 end

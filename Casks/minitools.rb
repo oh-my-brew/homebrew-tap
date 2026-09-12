@@ -2,10 +2,10 @@ cask "minitools" do
   version "2026.09.09.2"
   sha256 "80c6011dfdbc3605e9f0bebcc394120063cb280f16ea16a01c388be900cc8641"
 
-  url "https://github.com/omzcj/miniTools/releases/download/v#{version}/miniTools-#{version}.zip"
+  url "https://github.com/oh-my-brew/miniTools/releases/download/v#{version}/miniTools-#{version}.zip"
   name "miniTools"
   desc "Clipboard conversion, Safari window switching, and window management utility"
-  homepage "https://github.com/omzcj/miniTools"
+  homepage "https://github.com/oh-my-brew/miniTools"
 
   livecheck do
     url :url

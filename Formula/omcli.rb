@@ -1,8 +1,8 @@
 class Omcli < Formula
   desc "Unified macOS CLI for screen locking and disk snapshots"
   homepage "https://github.com/oh-my-brew/omcli"
-  url "https://github.com/oh-my-brew/omcli/releases/download/v2026.09.24.1/omcli-2026.09.24.1.tar.gz"
-  sha256 "c3f16c922d6e3fa61426ca2bd06ab32ad220d38c99cbbd8767b652b7674fbc12"
+  url "https://github.com/oh-my-brew/omcli/releases/download/v2026.09.24.2/omcli-2026.09.24.2.tar.gz"
+  sha256 "90b5e2664c045e83ca36a12610b23fd3c6221c45491a1d04c54c388a0ccc60f1"
   license all_of: ["MIT", "Apache-2.0"]
 
   livecheck do
@@ -15,7 +15,6 @@ class Omcli < Formula
   depends_on "ncdu"
 
   def install
-    system "make", "build"
     libexec.install "bin/omcli", "bin/omcli-lockscreen"
     bin.write_exec_script libexec/"omcli"
   end

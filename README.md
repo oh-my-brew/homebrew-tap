@@ -28,7 +28,7 @@ brew install <formula>
 | --- | --- | --- |
 | `ds_store` | 查找、清理并监控 `.DS_Store` 文件 | 支持 Homebrew Services |
 | `iproxy-ssh` | 通过 USB 将本地 2222 端口转发到设备 SSH 端口 | 支持 Homebrew Services |
-| `omcli` | 锁屏、记录磁盘占用快照并管理 Codex remote control | Apple Silicon、macOS、依赖 `ncdu` |
+| `omcli` | 锁屏、记录磁盘占用快照并提供 active writer 应急恢复 | Apple Silicon、macOS、依赖 `ncdu` |
 | `scaletail` | 以 `scaletail`/`scaletaild` 命令名安装 Tailscale | 基于官方 Tailscale 源码 |
 
 启动或停止服务：
@@ -47,26 +47,18 @@ brew services stop iproxy-ssh
 brew install oh-my-brew/tap/omcli
 ```
 
-`omcli` 合并了原来的 `lockscreen`、`dotfiles` 和 `codex-remote`。以下功能命令会直接影响
-当前电脑，不应作为安装验证或自动化测试运行：`omcli lockscreen` 会立即锁定当前 macOS
-会话，`omcli ncdu` 会扫描根目录并写入磁盘占用快照，`omcli codex start/stop/restart/update`
-会改变 ChatGPT Desktop、Codex app-server 或 standalone Codex 的运行和安装状态。
+`omcli` 合并了原来的 `lockscreen` 和 `dotfiles`，并保留 `xcodex` 作为 active writer
+应急恢复命令。以下功能命令会直接影响当前电脑，不应作为安装验证或自动化测试运行：
+`omcli lockscreen` 会立即锁定当前 macOS 会话，`omcli ncdu` 会扫描根目录并写入磁盘
+占用快照，`omcli xcodex` 会终止正在持有 Codex thread-writer lock 的进程。
 
 需要使用时手动运行对应入口：
 
 ```sh
 omcli lockscreen
 omcli ncdu
-omcli codex status
-omcli codex start
-omcli codex stop
-omcli codex restart
-omcli codex update check
+omcli xcodex
 ```
-
-`omcli codex` 不使用 Homebrew Services 或常驻 LaunchAgent。无参数运行 `omcli codex` 等价于
-只读的 `status`；`start` 禁用 ChatGPT 自动更新、智能修复并启动，`stop` 完全关闭，
-`restart` 强制重建连接。
 
 ## Casks
 

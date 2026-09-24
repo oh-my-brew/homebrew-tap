@@ -1,8 +1,8 @@
 class Omcli < Formula
-  desc "Unified macOS CLI for screen locking and disk snapshots"
+  desc "Unified macOS CLI for screen locking, disk snapshots, and Sidecar"
   homepage "https://github.com/oh-my-brew/omcli"
-  url "https://github.com/oh-my-brew/omcli/releases/download/v2026.09.24.2/omcli-2026.09.24.2.tar.gz"
-  sha256 "90b5e2664c045e83ca36a12610b23fd3c6221c45491a1d04c54c388a0ccc60f1"
+  url "https://github.com/oh-my-brew/omcli/releases/download/v2026.09.25.1/omcli-2026.09.25.1.tar.gz"
+  sha256 "b5d874d84cd7e94621ab07014fa779dc32137e40e761266aa31934e100506442"
   license all_of: ["MIT", "Apache-2.0"]
 
   livecheck do
@@ -10,18 +10,12 @@ class Omcli < Formula
     strategy :github_latest
   end
 
-  bottle do
-    root_url "https://github.com/oh-my-brew/omcli/releases/download/v2026.09.24.2"
-    rebuild 1
-    sha256 cellar: :any_skip_relocation, arm64_tahoe: "97fa74e60dc854fba64dad208a7118441ef23bb7279b6fe01d0a9d69c37fb2ad"
-  end
-
   depends_on arch: :arm64
   depends_on :macos
   depends_on "ncdu"
 
   def install
-    libexec.install "bin/omcli", "bin/omcli-lockscreen"
+    libexec.install "bin/omcli", "bin/omcli-lockscreen", "bin/omcli-sidecar"
     bin.write_exec_script libexec/"omcli"
   end
 
@@ -29,10 +23,12 @@ class Omcli < Formula
     assert_match "omcli #{version}", shell_output("#{bin}/omcli --version")
     assert_match "Usage:", shell_output("#{bin}/omcli --help")
     assert_predicate libexec/"omcli-lockscreen", :executable?
+    assert_predicate libexec/"omcli-sidecar", :executable?
 
     cli = (libexec/"omcli").read
     assert_match "lockscreen", cli
     assert_match "ncdu", cli
+    assert_match "sidecar", cli
     assert_match "xcodex", cli
   end
 end

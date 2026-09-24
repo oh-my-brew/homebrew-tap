@@ -10,6 +10,11 @@ class Omcli < Formula
     strategy :github_latest
   end
 
+  bottle do
+    root_url "https://github.com/oh-my-brew/omcli/releases/download/v2026.09.25.1"
+    sha256 cellar: :any_skip_relocation, arm64_tahoe: "e3f6163c8d101bbb3840ce89420fff42258bdaf734497305229b7f3851e80af4"
+  end
+
   depends_on arch: :arm64
   depends_on :macos
   depends_on "ncdu"

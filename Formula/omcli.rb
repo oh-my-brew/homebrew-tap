@@ -1,18 +1,13 @@
 class Omcli < Formula
-  desc "Unified macOS CLI for screen locking, disk snapshots, and Sidecar"
+  desc "Unified macOS CLI for screen locking, disk snapshots, Sidecar, and Codex recovery"
   homepage "https://github.com/oh-my-brew/omcli"
-  url "https://github.com/oh-my-brew/omcli/releases/download/v2026.09.25.1/omcli-2026.09.25.1.tar.gz"
-  sha256 "b5d874d84cd7e94621ab07014fa779dc32137e40e761266aa31934e100506442"
+  url "https://github.com/oh-my-brew/omcli/releases/download/v2026.09.25.2/omcli-2026.09.25.2.tar.gz"
+  sha256 "05c05c3e32b5fbe1ad3b2968c76d7fec0c6375cc12a1bce89881f1e843df350d"
   license all_of: ["MIT", "Apache-2.0"]
 
   livecheck do
     url :stable
     strategy :github_latest
-  end
-
-  bottle do
-    root_url "https://github.com/oh-my-brew/omcli/releases/download/v2026.09.25.1"
-    sha256 cellar: :any_skip_relocation, arm64_tahoe: "e3f6163c8d101bbb3840ce89420fff42258bdaf734497305229b7f3851e80af4"
   end
 
   depends_on arch: :arm64
@@ -34,6 +29,6 @@ class Omcli < Formula
     assert_match "lockscreen", cli
     assert_match "ncdu", cli
     assert_match "sidecar", cli
-    assert_match "xcodex", cli
+    assert_match "codex", cli
   end
 end

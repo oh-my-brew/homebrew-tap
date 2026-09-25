@@ -1,5 +1,5 @@
 class Omcli < Formula
-  desc "Unified macOS CLI for screen locking, disk snapshots, Sidecar, and Codex recovery"
+  desc "Unified macOS CLI for screen lock, snapshots, Sidecar, and Codex recovery"
   homepage "https://github.com/oh-my-brew/omcli"
   url "https://github.com/oh-my-brew/omcli/releases/download/v2026.09.25.2/omcli-2026.09.25.2.tar.gz"
   sha256 "05c05c3e32b5fbe1ad3b2968c76d7fec0c6375cc12a1bce89881f1e843df350d"

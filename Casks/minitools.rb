@@ -1,6 +1,6 @@
 cask "minitools" do
-  version "2026.09.26.3"
-  sha256 "0631d9ca2af97693462f33f0746821151060e75c75321e73e82b2e4f56c75a5f"
+  version "2026.09.26.4"
+  sha256 "d1e9229bf823d53c4b4a8f94326cd5d18d36e68741bec4f43ebae93ad3d8028a"
 
   url "https://github.com/oh-my-brew/miniTools/releases/download/v#{version}/miniTools-#{version}.zip"
   name "miniTools"

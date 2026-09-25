@@ -47,17 +47,17 @@ brew services stop iproxy-ssh
 brew install oh-my-brew/tap/omcli
 ```
 
-`omcli` 合并了原来的 `lockscreen` 和 `dotfiles`，并保留 `xcodex` 作为 active writer
+`omcli` 合并了原来的 `lockscreen` 和 `dotfiles`，并保留 `codex` 作为 active writer
 应急恢复命令。以下功能命令会直接影响当前电脑，不应作为安装验证或自动化测试运行：
 `omcli lockscreen` 会立即锁定当前 macOS 会话，`omcli ncdu` 会扫描根目录并写入磁盘
-占用快照，`omcli xcodex` 会终止正在持有 Codex thread-writer lock 的进程。
+占用快照，`omcli codex` 会终止正在持有 Codex thread-writer lock 的进程。
 
 需要使用时手动运行对应入口：
 
 ```sh
 omcli lockscreen
 omcli ncdu
-omcli xcodex
+omcli codex
 ```
 
 ## Casks

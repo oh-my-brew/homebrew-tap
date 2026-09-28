@@ -1,8 +1,8 @@
 class Omcli < Formula
   desc "Unified macOS CLI for screen lock, snapshots, Sidecar, and Codex recovery"
   homepage "https://github.com/oh-my-brew/omcli"
-  url "https://github.com/oh-my-brew/omcli/releases/download/v2026.09.25.2/omcli-2026.09.25.2.tar.gz"
-  sha256 "05c05c3e32b5fbe1ad3b2968c76d7fec0c6375cc12a1bce89881f1e843df350d"
+  url "https://github.com/oh-my-brew/omcli/releases/download/v2026.09.28.1/omcli-2026.09.28.1.tar.gz"
+  sha256 "aa2fb4b1f4a9a85b8e2eaaafa083cff2108147b7d223615e48846c59003aae98"
   license all_of: ["MIT", "Apache-2.0"]
 
   livecheck do
@@ -11,8 +11,8 @@ class Omcli < Formula
   end
 
   bottle do
-    root_url "https://github.com/oh-my-brew/omcli/releases/download/v2026.09.25.2"
-    sha256 cellar: :any_skip_relocation, arm64_tahoe: "e66e2bac29e8e80c0b9e59bd6984c91a6f65d22258418403c51d13368ebe0b81"
+    root_url "https://github.com/oh-my-brew/omcli/releases/download/v2026.09.28.1"
+    sha256 cellar: :any_skip_relocation, arm64_tahoe: "982a0402c746350fe7faab4b63739f13e14722162519b99b44e90f13585dc027"
   end
 
   depends_on arch: :arm64

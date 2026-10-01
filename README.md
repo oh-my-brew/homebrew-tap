@@ -26,7 +26,6 @@ brew install <formula>
 
 | 名称 | 用途 | 备注 |
 | --- | --- | --- |
-| `ds_store` | 查找、清理并监控 `.DS_Store` 文件 | 支持 Homebrew Services |
 | `iproxy-ssh` | 通过 USB 将本地 2222 端口转发到设备 SSH 端口 | 支持 Homebrew Services |
 | `omcli` | 锁屏、记录磁盘占用快照并提供 active writer 应急恢复 | Apple Silicon、macOS、依赖 `ncdu` |
 | `scaletail` | 以 `scaletail`/`scaletaild` 命令名安装 Tailscale | 基于官方 Tailscale 源码 |
@@ -34,9 +33,6 @@ brew install <formula>
 启动或停止服务：
 
 ```sh
-brew services start ds_store
-brew services stop ds_store
-
 brew services start iproxy-ssh
 brew services stop iproxy-ssh
 ```
@@ -81,8 +77,7 @@ brew audit --strict --online --tap=oh-my-brew/tap
 brew test <formula>
 ```
 
-`omcli` 和 `ds_store` 由各自仓库的
-`VERSION` 文件控制版本。修改发布内容时同步更新 `VERSION`，推送到默认分支后，
+`omcli` 由其仓库的 `VERSION` 文件控制版本。修改发布内容时同步更新 `VERSION`，推送到默认分支后，
 GitHub Actions 会先验证构建，再自动创建 tag、Release、发布资源和 SHA-256 文件。
 
 `omcli` 使用 `YYYY.MM.DD.N` 版本号，其中 `N` 是从 `1` 开始的当日发布序号。它的 Homebrew

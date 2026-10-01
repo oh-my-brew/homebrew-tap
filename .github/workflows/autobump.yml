@@ -32,7 +32,6 @@ jobs:
         with:
           token: ${{ secrets.HOMEBREW_BUMP_TOKEN }}
           formulae: >
-            ds_store
             omcli
             scaletail
           casks: >

@@ -47,8 +47,9 @@ brew install oh-my-brew/tap/omcli
 应急恢复命令。`lockscreen` 支持自动选择经锁定状态确认的实现，也可以显式指定
 `direct`、`agent`、`display-sleep` 或 `hotkey`；`status` 和 `doctor` 只读取状态。
 以下功能命令会直接影响当前电脑，不应作为安装验证或自动化测试运行：
-`omcli lockscreen` 会立即锁定当前 macOS 会话，`omcli ncdu dump` 会扫描根目录并写入磁盘
-占用快照，`omcli codex` 会终止正在持有 Codex thread-writer lock 的进程。
+`omcli lockscreen` 会立即锁定当前 macOS 会话，`omcli ncdu dump [DIRECTORY]` 会扫描目录并
+写入磁盘占用快照，`omcli ncdu prune` 会删除每个扫描目标超出保留数量的旧快照，
+`omcli codex` 会终止正在持有 Codex thread-writer lock 的进程。
 
 需要使用时手动运行对应入口：
 
@@ -58,6 +59,8 @@ omcli lockscreen status
 omcli lockscreen doctor
 omcli ncdu dump
 omcli ncdu read
+omcli ncdu list
+omcli ncdu prune --dry-run
 omcli codex
 ```
 

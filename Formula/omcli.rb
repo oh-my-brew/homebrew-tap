@@ -21,7 +21,7 @@ class Omcli < Formula
   depends_on "ncdu"
 
   def install
-    libexec.install "bin/omcli", "bin/omcli-lockscreen", "bin/omcli-sidecar"
+    libexec.install Dir["bin/*"]
     bin.write_exec_script libexec/"omcli"
   end
 

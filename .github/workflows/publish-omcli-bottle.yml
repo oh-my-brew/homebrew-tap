@@ -149,7 +149,6 @@ jobs:
         run: |
           set -euo pipefail
           source_asset="omcli-$VERSION.tar.gz"
-          bottle_asset="omcli-$VERSION.arm64_tahoe.bottle.tar.gz"
           release_json=$(gh release view "v$VERSION" --repo "$PRODUCT_REPOSITORY" --json assets)
           release_source_sha=$(
             jq -r --arg name "$source_asset" \
@@ -161,13 +160,20 @@ jobs:
             exit 1
           fi
 
+          expected_root="https://github.com/$PRODUCT_REPOSITORY/releases/download/v$VERSION"
+          current_root=$(sed -nE 's|^    root_url "([^"]+)"$|\1|p' "$FORMULA_PATH")
+          current_rebuild=$(sed -nE 's|^    rebuild ([0-9]+)$|\1|p' "$FORMULA_PATH")
+          current_rebuild=${current_rebuild:-0}
+          if (( current_rebuild == 0 )); then
+            current_asset="omcli-$VERSION.arm64_tahoe.bottle.tar.gz"
+          else
+            current_asset="omcli-$VERSION.arm64_tahoe.bottle.$current_rebuild.tar.gz"
+          fi
           release_bottle_sha=$(
-            jq -r --arg name "$bottle_asset" \
+            jq -r --arg name "$current_asset" \
               '.assets[] | select(.name == $name) | .digest // empty' <<<"$release_json" |
               sed -nE 's/^sha256:([0-9a-f]{64})$/\1/p'
           )
-          expected_root="https://github.com/$PRODUCT_REPOSITORY/releases/download/v$VERSION"
-          current_root=$(sed -nE 's|^    root_url "([^"]+)"$|\1|p' "$FORMULA_PATH")
           current_sha=$(
             sed -nE \
               's|^    sha256 cellar: :any_skip_relocation, arm64_tahoe: "([0-9a-f]{64})"$|\1|p' \
@@ -182,7 +188,6 @@ jobs:
 
           {
             echo "expected_root=$expected_root"
-            echo "expected_asset=$bottle_asset"
             echo "skip=$skip"
           } >>"$GITHUB_OUTPUT"
 
@@ -205,7 +210,6 @@ jobs:
           VERSION: ${{ steps.formula.outputs.version }}
           FORMULA_PATH: ${{ steps.formula.outputs.formula_path }}
           EXPECTED_ROOT: ${{ steps.release.outputs.expected_root }}
-          EXPECTED_ASSET: ${{ steps.release.outputs.expected_asset }}
         run: |
           set -euo pipefail
           python3 <<'PY'
@@ -218,11 +222,9 @@ jobs:
 
           artifact_dir = Path(os.environ["RUNNER_TEMP"]) / "omcli-bottle"
           version = os.environ["VERSION"]
-          expected_asset = os.environ["EXPECTED_ASSET"]
           json_files = list(artifact_dir.glob(f"omcli--{version}.arm64_tahoe.bottle.json"))
-          archives = list(artifact_dir.glob(f"omcli--{version}.arm64_tahoe.bottle.tar.gz"))
-          if len(json_files) != 1 or len(archives) != 1:
-              raise SystemExit("Expected one arm64_tahoe bottle JSON and archive")
+          if len(json_files) != 1:
+              raise SystemExit("Expected one arm64_tahoe bottle JSON")
 
           data = json.loads(json_files[0].read_text())
           entry = data.get("oh-my-brew/tap/omcli")
@@ -230,14 +232,22 @@ jobs:
               raise SystemExit("Bottle metadata does not match the omcli version")
           if entry["bottle"].get("cellar") != "any_skip_relocation":
               raise SystemExit("Bottle must be relocatable without a Cellar prefix")
+          rebuild = entry["bottle"].get("rebuild", 0)
+          if not isinstance(rebuild, int) or rebuild < 0:
+              raise SystemExit("Bottle rebuild must be a non-negative integer")
           tags = entry["bottle"]["tags"]
           if set(tags) != {"arm64_tahoe"}:
               raise SystemExit("Bottle metadata must contain only arm64_tahoe")
           tag = tags["arm64_tahoe"]
-          if tag["filename"] != expected_asset:
-              raise SystemExit("Bottle filename does not match the release asset name")
+          suffix = f".{rebuild}" if rebuild else ""
+          expected_asset = f"omcli-{version}.arm64_tahoe.bottle{suffix}.tar.gz"
+          expected_local = f"omcli--{version}.arm64_tahoe.bottle{suffix}.tar.gz"
+          if tag.get("filename") != expected_asset or tag.get("local_filename") != expected_local:
+              raise SystemExit("Bottle filenames do not match version, tag, and rebuild metadata")
 
-          archive_path = archives[0]
+          archive_path = artifact_dir / expected_local
+          if not archive_path.is_file():
+              raise SystemExit("Bottle archive named by metadata is missing")
           digest = hashlib.sha256(archive_path.read_bytes()).hexdigest()
           if digest != tag["sha256"]:
               raise SystemExit("Bottle archive SHA256 does not match its metadata")
@@ -247,15 +257,20 @@ jobs:
           formula_path = Path(os.environ["FORMULA_PATH"])
           formula = formula_path.read_text()
           bottle_re = re.compile(r'^  bottle do\n(?:    .*\n)+?  end\n', re.MULTILINE)
-          bottle_block = (
-              "  bottle do\n"
-              f"    root_url \"{os.environ['EXPECTED_ROOT']}\"\n"
-              f"    sha256 cellar: :any_skip_relocation, arm64_tahoe: \"{digest}\"\n"
-              "  end\n"
-          )
+          bottle_lines = [
+              "  bottle do\n",
+              f"    root_url \"{os.environ['EXPECTED_ROOT']}\"\n",
+          ]
+          if rebuild:
+              bottle_lines.append(f"    rebuild {rebuild}\n")
+          bottle_lines.extend([
+              f"    sha256 cellar: :any_skip_relocation, arm64_tahoe: \"{digest}\"\n",
+              "  end\n",
+          ])
+          bottle_block = "".join(bottle_lines)
           updated, count = bottle_re.subn(bottle_block, formula)
-          if count != 1 or updated == formula:
-              raise SystemExit("Expected exactly one stale bottle block in Formula/omcli.rb")
+          if count != 1:
+              raise SystemExit("Expected exactly one bottle block in Formula/omcli.rb")
           updated_path = formula_path.with_name("updated.rb")
           updated_path.write_text(updated)
 
@@ -263,6 +278,8 @@ jobs:
               print(f"archive={publish_path}", file=output)
               print(f"formula={updated_path}", file=output)
               print(f"sha256={digest}", file=output)
+              print(f"asset={expected_asset}", file=output)
+              print(f"rebuild={rebuild}", file=output)
           PY
           ruby -c "$RUNNER_TEMP/omcli-publish/updated.rb"
 

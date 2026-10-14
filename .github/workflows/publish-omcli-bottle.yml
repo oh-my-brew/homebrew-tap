@@ -16,7 +16,7 @@ jobs:
       github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.conclusion == 'success' &&
       startsWith(github.event.workflow_run.head_branch, 'bump-omcli-')
-    runs-on: macos-15
+    runs-on: ubuntu-latest
     env:
       PRODUCT_REPOSITORY: oh-my-brew/omcli
     steps:
@@ -38,6 +38,7 @@ jobs:
           pr_json=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$pr_number")
           state=$(jq -r '.state' <<<"$pr_json")
           base_ref=$(jq -r '.base.ref' <<<"$pr_json")
+          base_sha=$(jq -r '.base.sha' <<<"$pr_json")
           head_ref=$(jq -r '.head.ref' <<<"$pr_json")
           head_sha=$(jq -r '.head.sha' <<<"$pr_json")
           head_repo=$(jq -r '.head.repo.full_name' <<<"$pr_json")
@@ -59,68 +60,134 @@ jobs:
           fi
 
           {
-            echo "pr_number=$pr_number"
+            echo "base_sha=$base_sha"
             echo "head_ref=$head_ref"
             echo "head_sha=$head_sha"
             echo "run_id=$RUN_ID"
           } >>"$GITHUB_OUTPUT"
 
-      - name: Check out the tested PR head
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          ref: ${{ steps.context.outputs.head_sha }}
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Resolve version and existing bottle state
+      - name: Fetch and validate Formula text
         id: formula
         env:
           GH_TOKEN: ${{ github.token }}
+          BASE_SHA: ${{ steps.context.outputs.base_sha }}
+          HEAD_SHA: ${{ steps.context.outputs.head_sha }}
           HEAD_REF: ${{ steps.context.outputs.head_ref }}
         run: |
           set -euo pipefail
+          work_dir="$RUNNER_TEMP/omcli-publish"
+          rm -rf "$work_dir"
+          mkdir -p "$work_dir"
 
-          version=$(
-            sed -nE \
-              's|^  url "https://github.com/oh-my-brew/omcli/releases/download/v([^/]+)/omcli-[^"]+\.tar\.gz"$|\1|p' \
-              Formula/omcli.rb
+          gh api "repos/$GITHUB_REPOSITORY/contents/Formula/omcli.rb?ref=$BASE_SHA" \
+            --jq .content | base64 --decode >"$work_dir/base.rb"
+          gh api "repos/$GITHUB_REPOSITORY/contents/Formula/omcli.rb?ref=$HEAD_SHA" \
+            --jq .content | base64 --decode >"$work_dir/head.rb"
+
+          python3 <<'PY'
+          import os
+          from pathlib import Path
+          import re
+
+          work_dir = Path(os.environ["RUNNER_TEMP"]) / "omcli-publish"
+          base = (work_dir / "base.rb").read_text()
+          head = (work_dir / "head.rb").read_text()
+          url_re = re.compile(
+              r'^  url "https://github\.com/oh-my-brew/omcli/releases/download/'
+              r'v(?P<version>[0-9]{4}\.[0-9]{2}\.[0-9]{2}\.[0-9]+)/'
+              r'omcli-(?P=version)\.tar\.gz"$',
+              re.MULTILINE,
           )
-          if [[ -z "$version" || "$version" == *$'\n'* ]]; then
-            echo "Could not resolve one omcli version from Formula/omcli.rb" >&2
+          source_sha_re = re.compile(r'^  sha256 "(?P<sha>[0-9a-f]{64})"$', re.MULTILINE)
+          bottle_re = re.compile(r'^  bottle do\n(?:    .*\n)+?  end\n', re.MULTILINE)
+
+          def one(pattern, text, label):
+              matches = list(pattern.finditer(text))
+              if len(matches) != 1:
+                  raise SystemExit(f"Expected one {label}, found {len(matches)}")
+              return matches[0]
+
+          one(url_re, base, "base source URL")
+          head_url = one(url_re, head, "head source URL")
+          one(source_sha_re, base, "base source SHA")
+          head_source_sha = one(source_sha_re, head, "head source SHA")
+          one(bottle_re, base, "base bottle block")
+          one(bottle_re, head, "head bottle block")
+
+          def normalize(text):
+              text, url_count = url_re.subn('  url "OMCLI_SOURCE_URL"', text)
+              text, sha_count = source_sha_re.subn('  sha256 "OMCLI_SOURCE_SHA"', text)
+              text, bottle_count = bottle_re.subn(
+                  '  bottle do\n    OMCLI_BOTTLE\n  end\n', text
+              )
+              if (url_count, sha_count, bottle_count) != (1, 1, 1):
+                  raise SystemExit("Formula normalization did not replace exactly the allowed fields")
+              return text
+
+          if normalize(base) != normalize(head):
+              raise SystemExit(
+                  "Refusing to publish: Formula changes outside source URL, source SHA, or bottle block"
+              )
+
+          version = head_url.group("version")
+          if not os.environ["HEAD_REF"].startswith(f"bump-omcli-{version}"):
+              raise SystemExit("PR branch does not match the Formula version")
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              print(f"version={version}", file=output)
+              print(f"source_sha={head_source_sha.group('sha')}", file=output)
+              print(f"formula_path={work_dir / 'head.rb'}", file=output)
+          PY
+
+      - name: Verify product Release and current bottle state
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.formula.outputs.version }}
+          SOURCE_SHA: ${{ steps.formula.outputs.source_sha }}
+          FORMULA_PATH: ${{ steps.formula.outputs.formula_path }}
+        run: |
+          set -euo pipefail
+          source_asset="omcli-$VERSION.tar.gz"
+          bottle_asset="omcli-$VERSION.arm64_tahoe.bottle.tar.gz"
+          release_json=$(gh release view "v$VERSION" --repo "$PRODUCT_REPOSITORY" --json assets)
+          release_source_sha=$(
+            jq -r --arg name "$source_asset" \
+              '.assets[] | select(.name == $name) | .digest // empty' <<<"$release_json" |
+              sed -nE 's/^sha256:([0-9a-f]{64})$/\1/p'
+          )
+          if [[ -z "$release_source_sha" || "$release_source_sha" != "$SOURCE_SHA" ]]; then
+            echo "Formula source SHA does not match the product Release" >&2
             exit 1
           fi
-          [[ "$version" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}\.[0-9]+$ ]]
-          [[ "$HEAD_REF" == "bump-omcli-$version"* ]]
 
-          expected_root="https://github.com/$PRODUCT_REPOSITORY/releases/download/v$version"
-          expected_asset="omcli-$version.arm64_tahoe.bottle.tar.gz"
-          current_root=$(sed -nE 's|^    root_url "([^"]+)"$|\1|p' Formula/omcli.rb)
+          release_bottle_sha=$(
+            jq -r --arg name "$bottle_asset" \
+              '.assets[] | select(.name == $name) | .digest // empty' <<<"$release_json" |
+              sed -nE 's/^sha256:([0-9a-f]{64})$/\1/p'
+          )
+          expected_root="https://github.com/$PRODUCT_REPOSITORY/releases/download/v$VERSION"
+          current_root=$(sed -nE 's|^    root_url "([^"]+)"$|\1|p' "$FORMULA_PATH")
           current_sha=$(
             sed -nE \
               's|^    sha256 cellar: :any_skip_relocation, arm64_tahoe: "([0-9a-f]{64})"$|\1|p' \
-              Formula/omcli.rb
-          )
-          release_sha=$(
-            gh release view "v$version" --repo "$PRODUCT_REPOSITORY" --json assets \
-              --jq ".assets[] | select(.name == \"$expected_asset\") | .digest" |
-              sed -nE 's/^sha256:([0-9a-f]{64})$/\1/p'
+              "$FORMULA_PATH"
           )
 
           skip=false
-          if [[ "$current_root" == "$expected_root" && -n "$release_sha" && "$current_sha" == "$release_sha" ]]; then
+          if [[ "$current_root" == "$expected_root" && -n "$release_bottle_sha" && "$current_sha" == "$release_bottle_sha" ]]; then
             skip=true
             echo "Formula and product Release already reference the same bottle."
           fi
 
           {
-            echo "version=$version"
             echo "expected_root=$expected_root"
-            echo "expected_asset=$expected_asset"
+            echo "expected_asset=$bottle_asset"
             echo "skip=$skip"
           } >>"$GITHUB_OUTPUT"
 
       - name: Download the macOS bottle artifact
-        if: steps.formula.outputs.skip != 'true'
+        if: steps.release.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_ID: ${{ steps.context.outputs.run_id }}
@@ -131,13 +198,14 @@ jobs:
           gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" \
             --name bottles_macos-26 --dir "$artifact_dir"
 
-      - name: Validate and prepare the bottle
-        if: steps.formula.outputs.skip != 'true'
+      - name: Validate artifact and render Formula
+        if: steps.release.outputs.skip != 'true'
         id: bottle
         env:
           VERSION: ${{ steps.formula.outputs.version }}
-          EXPECTED_ROOT: ${{ steps.formula.outputs.expected_root }}
-          EXPECTED_ASSET: ${{ steps.formula.outputs.expected_asset }}
+          FORMULA_PATH: ${{ steps.formula.outputs.formula_path }}
+          EXPECTED_ROOT: ${{ steps.release.outputs.expected_root }}
+          EXPECTED_ASSET: ${{ steps.release.outputs.expected_asset }}
         run: |
           set -euo pipefail
           python3 <<'PY'
@@ -145,6 +213,7 @@ jobs:
           import json
           import os
           from pathlib import Path
+          import re
           import shutil
 
           artifact_dir = Path(os.environ["RUNNER_TEMP"]) / "omcli-bottle"
@@ -155,12 +224,12 @@ jobs:
           if len(json_files) != 1 or len(archives) != 1:
               raise SystemExit("Expected one arm64_tahoe bottle JSON and archive")
 
-          json_path = json_files[0]
-          archive_path = archives[0]
-          data = json.loads(json_path.read_text())
+          data = json.loads(json_files[0].read_text())
           entry = data.get("oh-my-brew/tap/omcli")
           if not entry or entry["formula"]["pkg_version"] != version:
               raise SystemExit("Bottle metadata does not match the omcli version")
+          if entry["bottle"].get("cellar") != "any_skip_relocation":
+              raise SystemExit("Bottle must be relocatable without a Cellar prefix")
           tags = entry["bottle"]["tags"]
           if set(tags) != {"arm64_tahoe"}:
               raise SystemExit("Bottle metadata must contain only arm64_tahoe")
@@ -168,60 +237,57 @@ jobs:
           if tag["filename"] != expected_asset:
               raise SystemExit("Bottle filename does not match the release asset name")
 
+          archive_path = archives[0]
           digest = hashlib.sha256(archive_path.read_bytes()).hexdigest()
           if digest != tag["sha256"]:
               raise SystemExit("Bottle archive SHA256 does not match its metadata")
 
           publish_path = artifact_dir / expected_asset
           shutil.copyfile(archive_path, publish_path)
-          entry["bottle"]["root_url"] = os.environ["EXPECTED_ROOT"]
-          json_path.write_text(json.dumps(data, indent=2) + "\n")
+          formula_path = Path(os.environ["FORMULA_PATH"])
+          formula = formula_path.read_text()
+          bottle_re = re.compile(r'^  bottle do\n(?:    .*\n)+?  end\n', re.MULTILINE)
+          bottle_block = (
+              "  bottle do\n"
+              f"    root_url \"{os.environ['EXPECTED_ROOT']}\"\n"
+              f"    sha256 cellar: :any_skip_relocation, arm64_tahoe: \"{digest}\"\n"
+              "  end\n"
+          )
+          updated, count = bottle_re.subn(bottle_block, formula)
+          if count != 1 or updated == formula:
+              raise SystemExit("Expected exactly one stale bottle block in Formula/omcli.rb")
+          updated_path = formula_path.with_name("updated.rb")
+          updated_path.write_text(updated)
 
           with open(os.environ["GITHUB_OUTPUT"], "a") as output:
               print(f"archive={publish_path}", file=output)
-              print(f"json={json_path}", file=output)
+              print(f"formula={updated_path}", file=output)
               print(f"sha256={digest}", file=output)
           PY
+          ruby -c "$RUNNER_TEMP/omcli-publish/updated.rb"
 
       - name: Publish bottle to the omcli Release
-        if: steps.formula.outputs.skip != 'true'
+        if: steps.release.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ secrets.HOMEBREW_BUMP_TOKEN }}
           VERSION: ${{ steps.formula.outputs.version }}
           ARCHIVE: ${{ steps.bottle.outputs.archive }}
         run: |
           set -euo pipefail
-          gh release view "v$VERSION" --repo "$PRODUCT_REPOSITORY" >/dev/null
+          if [[ -z "$GH_TOKEN" ]]; then
+            echo "HOMEBREW_BUMP_TOKEN is required" >&2
+            exit 1
+          fi
           gh release upload "v$VERSION" "$ARCHIVE" \
             --repo "$PRODUCT_REPOSITORY" --clobber
 
-      - name: Write bottle metadata to the Formula
-        if: steps.formula.outputs.skip != 'true'
-        env:
-          BOTTLE_JSON: ${{ steps.bottle.outputs.json }}
-          VERSION: ${{ steps.formula.outputs.version }}
-          EXPECTED_ROOT: ${{ steps.formula.outputs.expected_root }}
-          EXPECTED_SHA: ${{ steps.bottle.outputs.sha256 }}
-        run: |
-          set -euo pipefail
-          brew bottle --merge --write --no-commit "$BOTTLE_JSON"
-          brew style Formula/omcli.rb
-          git diff --check
-
-          git diff --quiet -- Formula/omcli.rb && {
-            echo "Bottle metadata did not change Formula/omcli.rb" >&2
-            exit 1
-          }
-          [[ $(git status --short | wc -l | tr -d ' ') == 1 ]]
-          [[ $(git status --short) == " M Formula/omcli.rb" ]]
-          grep -Fq "root_url \"$EXPECTED_ROOT\"" Formula/omcli.rb
-          grep -Fq "arm64_tahoe: \"$EXPECTED_SHA\"" Formula/omcli.rb
-
-      - name: Commit bottle metadata to the bump PR
-        if: steps.formula.outputs.skip != 'true'
+      - name: Commit Formula to the tested PR branch
+        if: steps.release.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ secrets.HOMEBREW_BUMP_TOKEN }}
           HEAD_REF: ${{ steps.context.outputs.head_ref }}
+          HEAD_SHA: ${{ steps.context.outputs.head_sha }}
+          FORMULA_PATH: ${{ steps.bottle.outputs.formula }}
           VERSION: ${{ steps.formula.outputs.version }}
         run: |
           set -euo pipefail
@@ -229,9 +295,26 @@ jobs:
             echo "HOMEBREW_BUMP_TOKEN is required" >&2
             exit 1
           fi
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add Formula/omcli.rb
-          git commit -m "Add bottle for omcli $VERSION"
-          git push "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY.git" \
-            "HEAD:$HEAD_REF"
+          current_sha=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$HEAD_REF" --jq .object.sha)
+          if [[ "$current_sha" != "$HEAD_SHA" ]]; then
+            echo "PR head changed after bottle validation; refusing a stale write" >&2
+            exit 1
+          fi
+
+          blob_sha=$(
+            jq -Rs '{content: ., encoding: "utf-8"}' <"$FORMULA_PATH" |
+              gh api --method POST "repos/$GITHUB_REPOSITORY/git/blobs" --input - --jq .sha
+          )
+          base_tree=$(gh api "repos/$GITHUB_REPOSITORY/git/commits/$HEAD_SHA" --jq .tree.sha)
+          tree_sha=$(
+            jq -n --arg base_tree "$base_tree" --arg blob_sha "$blob_sha" \
+              '{base_tree: $base_tree, tree: [{path: "Formula/omcli.rb", mode: "100644", type: "blob", sha: $blob_sha}]}' |
+              gh api --method POST "repos/$GITHUB_REPOSITORY/git/trees" --input - --jq .sha
+          )
+          commit_sha=$(
+            jq -n --arg message "Add bottle for omcli $VERSION" --arg tree "$tree_sha" --arg parent "$HEAD_SHA" \
+              '{message: $message, tree: $tree, parents: [$parent]}' |
+              gh api --method POST "repos/$GITHUB_REPOSITORY/git/commits" --input - --jq .sha
+          )
+          jq -n --arg sha "$commit_sha" '{sha: $sha, force: false}' |
+            gh api --method PATCH "repos/$GITHUB_REPOSITORY/git/refs/heads/$HEAD_REF" --input - >/dev/null

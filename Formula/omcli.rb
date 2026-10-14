@@ -1,5 +1,5 @@
 class Omcli < Formula
-  desc "Unified macOS CLI for screen lock, snapshots, Sidecar, and Codex recovery"
+  desc "Unified macOS CLI for screen lock, snapshots, Sidecar, and device tools"
   homepage "https://github.com/oh-my-brew/omcli"
   url "https://github.com/oh-my-brew/omcli/releases/download/v2026.10.14.1/omcli-2026.10.14.1.tar.gz"
   sha256 "57eba4f374796d76a7df1dcbf2208391a7fd9cdcf7d939e45a966fd6d818bb2d"
@@ -17,6 +17,7 @@ class Omcli < Formula
 
   depends_on arch: :arm64
   depends_on :macos
+  depends_on "libusbmuxd"
   depends_on "ncdu"
 
   def install
@@ -34,6 +35,7 @@ class Omcli < Formula
     assert_match "lockscreen", cli
     assert_match "ncdu", cli
     assert_match "sidecar", cli
+    assert_match "iphone", cli
     assert_match "codex", cli
   end
 end

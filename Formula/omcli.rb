@@ -17,8 +17,8 @@ class Omcli < Formula
 
   depends_on arch: :arm64
   depends_on "libusbmuxd"
-  depends_on "ncdu"
   depends_on :macos
+  depends_on "ncdu"
 
   def install
     libexec.install "bin/omcli", "bin/omcli-lockscreen", "bin/omcli-sidecar"

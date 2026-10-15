@@ -11,8 +11,8 @@ class Omcli < Formula
   end
 
   bottle do
-    root_url "https://github.com/oh-my-brew/omcli/releases/download/v2026.10.15.2"
-    sha256 cellar: :any_skip_relocation, arm64_tahoe: "60a9d8bbdd4ddb2a945c654a94324dfa4c76b1f0afd6209fcabf4dd158daf8ba"
+    root_url "https://github.com/oh-my-brew/omcli/releases/download/v2026.10.16.1"
+    sha256 cellar: :any_skip_relocation, arm64_tahoe: "661209c7f5e830e0e6637ee97cdedbfe34c4057b83f9fcdf1113f4c96ac9edc1"
   end
 
   depends_on arch: :arm64

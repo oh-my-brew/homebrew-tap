@@ -1,8 +1,8 @@
 class Omcli < Formula
   desc "Unified macOS CLI for screen lock, snapshots, Sidecar, and device tools"
   homepage "https://github.com/oh-my-brew/omcli"
-  url "https://github.com/oh-my-brew/omcli/releases/download/v2026.10.15.2/omcli-2026.10.15.2.tar.gz"
-  sha256 "6f35f12e30e2bc6289ecd26b1be3ca1824657b8c9a8ffc6532f2e938b53f1d19"
+  url "https://github.com/oh-my-brew/omcli/releases/download/v2026.10.16.1/omcli-2026.10.16.1.tar.gz"
+  sha256 "ebb565d6a71984c7958cd671e1df506ce7f4d35672ccc84381e0ad2d59a1926e"
   license all_of: ["MIT", "Apache-2.0"]
 
   livecheck do

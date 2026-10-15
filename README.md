@@ -89,8 +89,10 @@ resource owner 为 `oh-my-brew`，选定仓库为 `homebrew-tap`；仅凭 secret
 命名；内部版本信息、协议和网络行为仍属于 Tailscale。
 
 `minitools` 从 `oh-my-brew/miniTools` 的版本标签构建 Apple Silicon macOS 应用，并以 Developer ID、Hardened Runtime、Apple 公证和 stapled ticket 发布。
-发行版本使用 `YYYY.MM.DD.N`，其中 `N` 是从 `1` 开始的当日发布序号；应用内显示前三段
-日期版本，GitHub Release 和 Cask 使用完整版本。
+发行版本使用 `YYYY.MM.DD.N`，其中 `N` 是从 `1` 开始的当日发布序号；应用内、GitHub
+Release 和 Cask 均显示完整版本。应用提供签名的 Sparkle 手动更新，因此 Cask 标记为
+`auto_updates true`。
 相关窗口功能需要辅助功能权限，鼠标侧键还需要输入监控权限。它同样由 Autobump 检查 GitHub Release 并创建 Cask 更新 PR。
 
-Pull Request 会通过 GitHub Actions 在 macOS 26 和 Linux 上运行 BrewTestBot。现有产品从 Release 到 Tap 合并及三机安装的流程见 `RELEASES.md`。
+Pull Request 会通过 GitHub Actions 在 macOS 26 和 Linux 上运行 BrewTestBot。产品 Release
+与 Tap 解耦；定时发现、Bottle、合并和按需安装规则见 `RELEASES.md`。

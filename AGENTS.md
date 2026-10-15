@@ -1,6 +1,6 @@
 # Homebrew Tap 工程约定
 
-本仓库是 `oh-my-brew/tap` 的 Formula、Cask 与 GitHub Actions 权威来源。任何影响本仓库、远程 Tap PR 或三机安装的 agent 都必须遵守本文件；现有产品发行另读同一 commit 的 `RELEASES.md`。
+本仓库是 `oh-my-brew/tap` 的 Formula、Cask 与 GitHub Actions 权威来源。任何影响本仓库、远程 Tap PR 或安装的 agent 都必须遵守本文件；现有产品更新另读同一 commit 的 `RELEASES.md`。
 
 ## 通用边界
 
@@ -9,12 +9,12 @@
 - 不修改无关 Formula/Cask，不升级无关软件，不运行 `brew autoremove`、宽泛 `brew cleanup` 或全量 `brew upgrade`。
 - 禁止克隆或拉取完整 `homebrew/core`：不得执行 `brew tap homebrew/core`、不得设置 `HOMEBREW_NO_INSTALL_FROM_API=1`，也不得采用其他触发 core 仓库克隆的方式。流程要求本地 core tap 时立即停止并报告。
 - 测试只验证包、安装布局和无副作用接口；不得调用 omcli 或 miniTools 的真实功能。
-- 远端写入和三机定向安装按产品仓库已经确认的发行链授权执行；版本冲突、权限失效、安全检查失败或范围扩大时停止并请求用户处理。
+- 产品 Release 与 Tap 维护相互独立。定时 Autobump 可以创建 PR，但不会自动合并；安装也不是每次产品发行的完成条件。
 
-## 现有产品发行
+## 现有产品更新
 
-- 处理 omcli 或 miniTools 的 Release 时，必须读取与本文件相同 commit 的 `RELEASES.md`。
-- 固定一次发行使用的规则 commit，同时实时核对 workflow、PR、检查和 Release；文档不替代当前 GitHub 状态。
+- 处理 omcli 或 miniTools 的 Tap 更新时，必须读取与本文件相同 commit 的 `RELEASES.md`。
+- 固定一次维护使用的规则 commit，同时实时核对 workflow、PR、检查和 Release；文档不替代当前 GitHub 状态。
 - Autobump 创建 PR 不等于可以合并。只接受最新 PR head 的必需检查；omcli Bottle 写回后必须等待新一轮最终检查。
 - 正常发行不得通过手工改版本/SHA、直接上传未验证资产或跳过失败检查来绕过 Actions。
 
@@ -40,5 +40,5 @@
 
 ## 完成标准
 
-- 报告产品版本与 Release、Tap PR 和 merge commit、最新 CI、三机目标版本、Bottle 或签名证据、未做的功能测试和剩余阻塞。
-- 工作流仍在运行时不得把发行描述为完成；明确标注非阻塞检查与真正阻塞项。
+- 报告产品版本与 Release、Tap PR 和 merge commit、最新 CI、Bottle 或签名证据，以及本次明确要求的安装结果。
+- 工作流仍在运行时不得把 Tap 更新描述为完成；明确标注非阻塞检查与真正阻塞项。

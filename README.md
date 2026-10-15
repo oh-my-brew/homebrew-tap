@@ -26,16 +26,8 @@ brew install <formula>
 
 | 名称 | 用途 | 备注 |
 | --- | --- | --- |
-| `iproxy-ssh` | 通过 USB 将本地 2222 端口转发到设备 SSH 端口 | 支持 Homebrew Services |
 | `omcli` | 锁屏、记录磁盘占用快照并提供 active writer 应急恢复 | Apple Silicon、macOS、依赖 `ncdu` |
 | `scaletail` | 以 `scaletail`/`scaletaild` 命令名安装 Tailscale | 基于官方 Tailscale 源码 |
-
-启动或停止服务：
-
-```sh
-brew services start iproxy-ssh
-brew services stop iproxy-ssh
-```
 
 安装统一命令行工具：
 
@@ -49,7 +41,7 @@ brew install oh-my-brew/tap/omcli
 以下功能命令会直接影响当前电脑，不应作为安装验证或自动化测试运行：
 `omcli lockscreen` 会立即锁定当前 macOS 会话，`omcli ncdu dump [DIRECTORY]` 会扫描目录并
 写入磁盘占用快照，`omcli ncdu prune` 会删除每个扫描目标超出保留数量的旧快照，
-`omcli codex` 会终止正在持有 Codex thread-writer lock 的进程。
+`omcli codex recover` 会终止正在持有 Codex thread-writer lock 的进程。
 
 需要使用时手动运行对应入口：
 
@@ -61,14 +53,14 @@ omcli ncdu dump
 omcli ncdu read
 omcli ncdu list
 omcli ncdu prune --dry-run
-omcli codex
+omcli codex recover
 ```
 
 ## Casks
 
 | 名称 | 用途 | 备注 |
 | --- | --- | --- |
-| `minitools` | 剪贴板转换、Safari 窗口切换和窗口管理 | macOS 26+、ad-hoc 签名 |
+| `minitools` | 编码转换、Safari 窗口切换和窗口管理 | macOS 26+、Developer ID 签名并公证 |
 
 ## 维护与验证
 
@@ -96,10 +88,9 @@ resource owner 为 `oh-my-brew`，选定仓库为 `homebrew-tap`；仅凭 secret
 单独维护源码仓库。Formula 仅把安装的 CLI、daemon、服务和补全文件改为 `scaletail`
 命名；内部版本信息、协议和网络行为仍属于 Tailscale。
 
-`minitools` 从 `oh-my-brew/miniTools` 的版本标签构建通用 macOS 应用，并以 ad-hoc 签名发布。
+`minitools` 从 `oh-my-brew/miniTools` 的版本标签构建 Apple Silicon macOS 应用，并以 Developer ID、Hardened Runtime、Apple 公证和 stapled ticket 发布。
 发行版本使用 `YYYY.MM.DD.N`，其中 `N` 是从 `1` 开始的当日发布序号；应用内显示前三段
 日期版本，GitHub Release 和 Cask 使用完整版本。
-首次运行可能需要在“系统设置 → 隐私与安全性”中选择“仍要打开”，之后还需授予辅助功能
-权限。它同样由 Autobump 检查 GitHub Release 并创建 Cask 更新 PR。
+相关窗口功能需要辅助功能权限，鼠标侧键还需要输入监控权限。它同样由 Autobump 检查 GitHub Release 并创建 Cask 更新 PR。
 
-Pull Request 会通过 GitHub Actions 在 Intel macOS、Apple Silicon macOS 和 Linux 上运行 BrewTestBot。
+Pull Request 会通过 GitHub Actions 在 macOS 26 和 Linux 上运行 BrewTestBot。现有产品从 Release 到 Tap 合并及三机安装的流程见 `RELEASES.md`。

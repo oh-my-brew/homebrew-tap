@@ -70,6 +70,14 @@ def normalize(text, package):
 
 
 def validate_change(package, before, after):
+    if package == "omcli":
+        bottle_fields = (
+            r'  bottle do\n    root_url "https://github.com/oh-my-brew/omcli/releases/download/v[0-9.]+"\n'
+            r'(?:    rebuild [0-9]+\n)?'
+            rf'    sha256 cellar: :any_skip_relocation, arm64_tahoe: "{HEX}"\n  end\n'
+        )
+        for text in (before, after):
+            require(re.fullmatch(bottle_fields, one(BOTTLE, text)[0]), "Non-version bottle directives")
     require(normalize(before, package) == normalize(after, package), "Changes outside version, URL, SHA or bottle")
     old, new = version(before, package), version(after, package)
     require(tuple(map(int, new.split('.'))) > tuple(map(int, old.split('.'))), "Version must increase")

@@ -41,6 +41,11 @@ class PolicyTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     m.validate_change(p, old, new)
 
+    def test_bottle_code_cannot_be_classified_as_pure_version(self):
+        before, after, _ = self.bump('omcli')
+        with self.assertRaisesRegex(ValueError, 'Non-version bottle'):
+            m.validate_change('omcli', before, after.replace('  bottle do', '  bottle do\n    system "bad"'))
+
     def test_duplicate_sha_rejected(self):
         before, after, _ = self.bump('minitools')
         after += '\n  sha256 "' + 'a' * 64 + '"\n'

@@ -61,6 +61,7 @@ omcli codex recover
 | 名称 | 用途 | 备注 |
 | --- | --- | --- |
 | `minitools` | 编码转换、Safari 窗口切换和窗口管理 | macOS 26+、Developer ID 签名并公证 |
+| `rustdeskx` | RustDesk 的 Apple Silicon 重品牌发行包 | macOS 12+、Developer ID 签名并公证 |
 
 ## 维护与验证
 
@@ -72,7 +73,10 @@ brew audit --strict --online --tap=oh-my-brew/tap
 brew test <formula>
 ```
 
-`omcli` 由其仓库的 `VERSION` 文件控制版本；源码合入后创建 Beta 候选，经用户批准后复用同一归档提升正式 Release，再由 Tap 独立发现。
+Tap只消费产品的稳定Release，不编排产品Beta或正式提升。产品流程分别见
+[omcli发行说明](https://github.com/oh-my-brew/omcli/blob/main/RELEASING.md)、
+[miniTools发行说明](https://github.com/oh-my-brew/miniTools/blob/master/DISTRIBUTION.md)与
+[RustDeskX发行说明](https://github.com/oh-my-brew/rustdeskx/blob/main/DISTRIBUTION.md)。
 
 `omcli` 使用 `YYYY.MM.DD.N` 版本号，其中 `N` 是从 `1` 开始的当日发布序号。它的 Homebrew
 测试只检查顶层版本、帮助和安装文件，不运行上述会影响电脑的功能命令。
@@ -87,7 +91,7 @@ resource owner 为 `oh-my-brew`，选定仓库为 `homebrew-tap`；仅凭 secret
 单独维护源码仓库。Formula 仅把安装的 CLI、daemon、服务和补全文件改为 `scaletail`
 命名；内部版本信息、协议和网络行为仍属于 Tailscale。
 
-`minitools` 从 `oh-my-brew/miniTools` 的版本标签构建 Apple Silicon macOS 应用，并以 Developer ID、Hardened Runtime、Apple 公证和 stapled ticket 发布。
+`minitools` 下载产品仓库已构建的 Apple Silicon 正式ZIP，包含 Developer ID、Hardened Runtime、Apple 公证和 stapled ticket。
 发行版本使用 `YYYY.MM.DD.N`，其中 `N` 是从 `1` 开始的当日发布序号；应用内、GitHub
 Release 和 Cask 均显示完整版本。应用提供签名的 Sparkle 手动更新，因此 Cask 标记为
 `auto_updates true`。

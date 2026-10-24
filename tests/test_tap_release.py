@@ -13,7 +13,7 @@ ROOT = Path(__file__).parents[1]
 
 class PolicyTests(unittest.TestCase):
     def text(self, package):
-        return (ROOT / m.PRODUCTS[package][1]).read_text()
+        return (ROOT / 'tests/fixtures' / f'{package}.rb').read_text()
 
     def bump(self, package):
         before = self.text(package)

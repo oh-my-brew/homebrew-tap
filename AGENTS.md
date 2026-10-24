@@ -9,7 +9,8 @@
 - 不修改无关 Formula/Cask，不升级无关软件，不运行 `brew autoremove`、宽泛 `brew cleanup` 或全量 `brew upgrade`。
 - 禁止克隆或拉取完整 `homebrew/core`：不得执行 `brew tap homebrew/core`、不得设置 `HOMEBREW_NO_INSTALL_FROM_API=1`，也不得采用其他触发 core 仓库克隆的方式。流程要求本地 core tap 时立即停止并报告。
 - 测试只验证包、安装布局和无副作用接口；不得调用 omcli 或 miniTools 的真实功能。
-- 产品 Release 与 Tap 维护相互独立。定时 Autobump 可以创建 PR，但不会自动合并；安装也不是每次产品发行的完成条件。
+- 发布代理复用、结果回传和关闭由产品仓库 AGENTS 及发行文档管理；Tap 不接收每次产品发版的即时代理派发，也不承担唤醒开发主会话。Tap 自身任务交付后同样应回传结果并按可用工具收尾，不为查询 CI 另开代理。
+- 产品 Release 与 Tap 维护相互独立。定时 Autobump 对三个自有产品的纯版本更新创建/取代 PR，并在发布就绪和必需检查通过后自动合并；scaletail 与非版本改动仍人工审核；安装也不是每次产品发行的完成条件。
 
 ## 现有产品更新
 

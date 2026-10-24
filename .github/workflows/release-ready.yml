@@ -1,0 +1,92 @@
+name: Tap release readiness
+
+on:
+  push:
+    branches: [main]
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: PR number to revalidate from trusted default-branch code
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: read
+  statuses: write
+
+concurrency:
+  group: tap-ready-${{ github.event.pull_request.number || inputs.pr || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Refresh trusted version PRs after main advances
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_BUMP_TOKEN }}
+        run: python3 scripts/tap_release.py sync
+  ready:
+    if: github.event_name != 'push'
+    name: Verify release from trusted code
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - name: Check out trusted base only
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Resolve PR identity
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr }}
+        run: |
+          set -euo pipefail
+          [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]
+          echo "number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          head=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq .head.sha)
+          echo "head=$head" >> "$GITHUB_OUTPUT"
+      - name: Mark exact PR head pending
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_HEAD: ${{ steps.pr.outputs.head }}
+        run: |
+          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$PR_HEAD" \
+            -f state=pending -f context=tap-release-ready \
+            -f description="Validating stable release, assets and package identity"
+      - name: Validate immutable release and package
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          PR_HEAD: ${{ steps.pr.outputs.head }}
+        run: python3 scripts/tap_release.py gate --pr "$PR_NUMBER" --head "$PR_HEAD"
+      - name: Publish readiness on exact PR head
+        if: always() && steps.pr.outputs.head != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_HEAD: ${{ steps.pr.outputs.head }}
+          GATE_OUTCOME: ${{ steps.gate.outcome }}
+        run: |
+          state=failure
+          if [[ "$GATE_OUTCOME" == success ]]; then state=success; fi
+          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$PR_HEAD" \
+            -f "state=$state" -f context=tap-release-ready \
+            -f description="Release policy validation: $state" \
+            -f "target_url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+      - name: Enable protected automatic merge
+        if: steps.gate.outputs.eligible == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_BUMP_TOKEN }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          PR_HEAD: ${{ steps.pr.outputs.head }}
+        run: python3 scripts/tap_release.py merge --pr "$PR_NUMBER" --head "$PR_HEAD"

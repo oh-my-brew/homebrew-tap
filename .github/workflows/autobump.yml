@@ -5,6 +5,10 @@ on:
     - cron: "17 3 * * *"
   workflow_dispatch:
 
+concurrency:
+  group: tap-autobump
+  cancel-in-progress: false
+
 permissions:
   contents: read
 
@@ -17,8 +21,19 @@ jobs:
       - name: Check configuration
         run: |
           if [[ -z "$HOMEBREW_BUMP_TOKEN" ]]; then
-            echo "::notice::HOMEBREW_BUMP_TOKEN is not configured; skipping autobump."
+            echo "::error::HOMEBREW_BUMP_TOKEN is required"
+            exit 1
           fi
+
+      - name: Check out trusted automation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Supersede stale first-party version PRs
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_BUMP_TOKEN }}
+        run: python3 scripts/tap_release.py prepare
 
       - name: Set up Homebrew
         if: env.HOMEBREW_BUMP_TOKEN != ''
@@ -38,3 +53,10 @@ jobs:
             minitools
             rustdeskx
           fork: false
+
+      - name: Verify latest stable versions are represented
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_BUMP_TOKEN }}
+        run: |
+          set -euo pipefail
+          python3 scripts/tap_release.py report | tee -a "$GITHUB_STEP_SUMMARY"

@@ -13,7 +13,7 @@ ROOT = Path(__file__).parents[1]
 
 class PolicyTests(unittest.TestCase):
     def text(self, package):
-        return (ROOT / m.PRODUCTS[package][1]).read_text()
+        return (ROOT / 'tests/fixtures' / f'{package}.txt').read_text()
 
     def bump(self, package):
         before = self.text(package)
@@ -40,6 +40,11 @@ class PolicyTests(unittest.TestCase):
             for old, new in [(before, before), (after, before)]:
                 with self.assertRaises(ValueError):
                     m.validate_change(p, old, new)
+
+    def test_bottle_code_cannot_be_classified_as_pure_version(self):
+        before, after, _ = self.bump('omcli')
+        with self.assertRaisesRegex(ValueError, 'Non-version bottle'):
+            m.validate_change('omcli', before, after.replace('  bottle do', '  bottle do\n    system "bad"'))
 
     def test_duplicate_sha_rejected(self):
         before, after, _ = self.bump('minitools')
@@ -176,9 +181,10 @@ class ReconcileTests(unittest.TestCase):
     @patch.object(m, 'run')
     def test_main_advance_updates_branch_with_expected_sha(self, run, api, *_):
         pr = self.pr()
-        fresh = dict(pr, mergeable_state='behind')
-        api.side_effect = [[pr], fresh, {}]
+        fresh = dict(pr, mergeable_state='blocked', base={'sha': 'main'})
+        api.side_effect = [[pr], fresh, {'behind_by': 1}, {}]
         m.sync()
+        self.assertIn(unittest.mock.call('compare/main...old'), api.call_args_list)
         self.assertEqual(api.call_args.args, ('pulls/62/update-branch', 'PUT', {'expected_head_sha': 'old'}))
         run.assert_not_called()
 

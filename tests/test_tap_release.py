@@ -176,9 +176,10 @@ class ReconcileTests(unittest.TestCase):
     @patch.object(m, 'run')
     def test_main_advance_updates_branch_with_expected_sha(self, run, api, *_):
         pr = self.pr()
-        fresh = dict(pr, mergeable_state='behind')
-        api.side_effect = [[pr], fresh, {}]
+        fresh = dict(pr, mergeable_state='blocked', base={'sha': 'main'})
+        api.side_effect = [[pr], fresh, {'behind_by': 1}, {}]
         m.sync()
+        self.assertIn(unittest.mock.call('compare/main...old'), api.call_args_list)
         self.assertEqual(api.call_args.args, ('pulls/62/update-branch', 'PUT', {'expected_head_sha': 'old'}))
         run.assert_not_called()
 

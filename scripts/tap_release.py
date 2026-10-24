@@ -262,6 +262,12 @@ def reconcile(report=False):
             require(matching, f"No PR for latest {package} {target}")
 
 
+def needs_update(pr):
+    # mergeable_state may be "blocked" while CI runs even if main advanced.
+    comparison = api(f"compare/{pr['base']['sha']}...{pr['head']['sha']}")
+    return comparison['behind_by'] > 0
+
+
 def sync():
     pulls = api('pulls?state=open&per_page=100')
     require(len(pulls) < 100, "Too many open PRs")
@@ -278,7 +284,7 @@ def sync():
             continue
         fresh = api(f"pulls/{pr['number']}")
         require(fresh['head']['sha'] == pr['head']['sha'], "PR changed during sync")
-        if fresh['mergeable_state'] == 'behind':
+        if needs_update(fresh):
             api(f"pulls/{pr['number']}/update-branch", 'PUT', {'expected_head_sha': fresh['head']['sha']})
             print(f"Updated PR #{pr['number']} with current main; waiting for new-head CI")
         else:
@@ -307,7 +313,7 @@ def main():
         selected = candidate(pr)
         require(selected is not None, "PR no longer eligible")
         require(latest(selected[0])['tag_name'] == f'v{selected[1]}', "Stable Release changed")
-        if pr['mergeable_state'] == 'behind':
+        if needs_update(pr):
             api(f'pulls/{args.pr}/update-branch', 'PUT', {'expected_head_sha': args.head})
             print('Branch updated; waiting for new-head checks')
             return

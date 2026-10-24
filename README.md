@@ -72,8 +72,7 @@ brew audit --strict --online --tap=oh-my-brew/tap
 brew test <formula>
 ```
 
-`omcli` 由其仓库的 `VERSION` 文件控制版本。修改发布内容时同步更新 `VERSION`，推送到默认分支后，
-GitHub Actions 会先验证构建，再自动创建 tag、Release、发布资源和 SHA-256 文件。
+`omcli` 由其仓库的 `VERSION` 文件控制版本；源码合入后创建 Beta 候选，经用户批准后复用同一归档提升正式 Release，再由 Tap 独立发现。
 
 `omcli` 使用 `YYYY.MM.DD.N` 版本号，其中 `N` 是从 `1` 开始的当日发布序号。它的 Homebrew
 测试只检查顶层版本、帮助和安装文件，不运行上述会影响电脑的功能命令。
@@ -82,7 +81,7 @@ Tap 每天检查一次这些 Release，并通过 Homebrew `bump-packages` 自动
 启用前需要在仓库 Actions secrets 中添加 `HOMEBREW_BUMP_TOKEN`；它应是仅授权本仓库、
 能推送分支并创建 Pull Request 的 fine-grained PAT。组织迁移后应核对该 PAT 的
 resource owner 为 `oh-my-brew`，选定仓库为 `homebrew-tap`；仅凭 secret 名称存在
-不能确认新组织下的访问权限。未配置时工作流会安全跳过，不会产生失败通知。
+不能确认新组织下的访问权限。未配置时工作流会明确失败，避免把没有更新的软件包标为同步成功。
 
 `scaletail` 直接跟随 Tailscale 官方稳定 tag，通过同一 Autobump 工作流更新，不需要
 单独维护源码仓库。Formula 仅把安装的 CLI、daemon、服务和补全文件改为 `scaletail`
@@ -96,3 +95,5 @@ Release 和 Cask 均显示完整版本。应用提供签名的 Sparkle 手动更
 
 Pull Request 会通过 GitHub Actions 在 macOS 26 和 Linux 上运行 BrewTestBot。产品 Release
 与 Tap 解耦；定时发现、Bottle、合并和按需安装规则见 `RELEASES.md`。
+
+三个自有产品的纯版本更新可自动取代旧 PR、验证发布资产并按必需检查自动合并；scaletail 和非版本改动仍人工审核。具体范围、身份与门禁见 [RELEASES.md](RELEASES.md)。

@@ -1,13 +1,17 @@
-# omcli 与 miniTools 的 Homebrew 更新
+# 自有产品的 Homebrew 自动更新
 
 产品仓库完成 GitHub Release 后即结束产品发行。Tap 每天北京时间 11:17 运行
 `Autobump releases`，独立检查稳定 Release，并为 omcli、miniTools 及其他受管包创建
 版本更新 PR。产品 Release 不手动触发这条工作流，也不等待 Tap 或设备安装。
 
+产品发布代理的单实例、重试、回执、通知和关闭协议留在各产品发行文档；
+Tap 不承接每次 Release 的即时代理链。独立 Tap 维护任务如使用代理，复用同一任务代理完成
+检查/合并/明确要求的安装，交接后按实际工具收尾；归档不等于资源释放。
+
 ## 定时发现与 PR
 
-1. Autobump 只创建版本更新 PR，不自动合并。
-2. 已有相同包和版本的 PR 时复用，不重复创建。
+1. omcli、miniTools、RustDeskX 的受信任纯版本 PR 自动合并；scaletail 与其他改动仍人工审核。
+2. 已有相同包和版本的 PR 时复用；受信任纯版本旧 PR 被较新的稳定 Release 取代时关闭并保留来源链接，再由 Homebrew 工具创建新 PR。未知作者、来源或混合改动使自动取代停止，不强推旧分支。
 3. 每个 PR 只包含该包的版本、URL、SHA 和受信任 Bottle 写回；夹带无关修改时不合并。
 4. 所有判断以最新 PR head 的必需检查为准。
 
@@ -49,3 +53,25 @@ brew upgrade --cask oh-my-brew/tap/minitools
 - Bottle 写回失败：修复受信任工作流并复用原 PR。
 - CI 失败：只修复对应包和失败链路，不顺带升级无关包。
 - 设备不可达或需要人工系统权限：如实记录，不把部分安装表述为全部完成。
+
+## 发布就绪与自动合并（2026-10-25）
+
+用户已授权三个自有产品的纯版本自动更新与合并，不扩展到设备升级或产品发行。
+`release-ready.yml` 只从受信任 base commit 读取脚本，通过 GitHub API 获取 PR 内容，
+不 checkout 或执行 PR 的 Ruby、脚本和 workflow。作者固定为当前 bump token 身份
+`assassinor`，只接受本仓库 `bump-<package>-<version>` 分支、main 目标和单包修改。
+更换 token 身份须显式更新策略并评审。
+
+- 仅允许版本、URL、SHA；omcli 另允许经验证的 Bottle 块。其他改动只供人工审核，不启用自动合并。
+- 最新正式 Release 必须与 PR 版本一致，资产必须上传完成且 SHA-256 匹配。
+- omcli 必须有当前版本的 arm64 Tahoe 可迁移 Bottle，并与产品 Release 的资产摘要一致；第一轮缺少 Bottle 时门禁失败，Bottle 写回触发新 head 的门禁和完整 CI。
+- 两个 Cask 实际下载 ZIP，验证归档摘要、校验文件、Bundle ID、Developer ID、固定 Team ID、arm64、Gatekeeper 与 stapled 公证票据；miniTools 同时验证 helper 身份及固定公钥的 Sparkle Ed25519 归档签名。
+- `tap-release-ready` 状态明确写到正在验证的 PR head SHA；pull_request_target 自身运行的 base SHA 不作为就绪依据。合并前再次检查 head、改动范围与最新 Release。
+- 仓库开启原生 auto-merge，以 squash 维持线性历史；保留严格最新分支检查、BrewTestBot，并增加发布就绪、自动化测试及 CodeQL 必需检查。没有 admin 绕过。
+- 多个包同时更新时，前一个合并会使后一个落后 main；main 推送会触发受信任协调流程，通过 GitHub 的普通分支更新接口同步受信任 PR，重新等待新 head 检查，不 force push。
+
+每日发现流程继续与产品 Release 解耦。`HOMEBREW_BUMP_TOKEN` 缺失、旧 PR 无法安全取代、
+或没有代表最新稳定版的 PR 时，Autobump 失败并输出各包状态，不再静默成功。
+失败由 Actions 保留记录，不新增飞书通知或设备操作。
+
+维护验证：`python3 -m unittest discover -s tests -v`、`actionlint .github/workflows/*.yml`。

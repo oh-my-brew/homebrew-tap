@@ -2,8 +2,8 @@ class Scaletail < Formula
   desc "Tailscale CLI and daemon installed with scaletail command names"
   homepage "https://tailscale.com"
   url "https://github.com/tailscale/tailscale.git",
-      tag:      "v1.102.3",
-      revision: "53a0d659afa51835dd7a9283873cca44261454f8"
+      tag:      "v1.104.4",
+      revision: "27047635f237d1f3e0b08c0f487674757f30d2f7"
   license "BSD-3-Clause"
 
   livecheck do

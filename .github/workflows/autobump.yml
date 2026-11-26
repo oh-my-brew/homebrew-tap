@@ -48,7 +48,6 @@ jobs:
           token: ${{ secrets.HOMEBREW_BUMP_TOKEN }}
           formulae: >
             omcli
-            scaletail
           casks: >
             minitools
             rustdeskx

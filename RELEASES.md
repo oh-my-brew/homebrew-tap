@@ -28,6 +28,16 @@ miniTools PR 必须确认版本和 SHA 对应已经签名、公证且包含签�
 Cask 使用 `auto_updates true`，因为应用可由 Sparkle 自行下载和安装更新。等待最新 PR head
 的 BrewTestBot、CodeQL 和仓库必需检查通过后，才可单独决定合并。
 
+## Scaletail Bottle
+
+`Scaletail stable bottle` 每天北京时间 11:17 从 Tailscale 的 GitHub 稳定 Release
+解析 tag 和源码 commit。发现新版时，在 GitHub 托管的 Apple Silicon macOS 27
+runner 编译、试装 `arm64_golden_gate` Bottle，并运行 Formula 测试。
+通过后把资产发布到本 Tap 的 `scaletail-v<版本>` Release，并创建版本 PR。
+`tap-release-ready` 核对稳定源码、Bottle 摘要和发布时使用的配方。
+等待当前 PR 的全部必需检查，再人工合并。重复运行复用已发布资产和版本 PR。
+首次启用或排障可从 `main` 手动运行该工作流。
+
 ## 安装与升级
 
 Tap 合并不自动升级 M1、M2、M5。设备日常优先使用产品自更新：miniTools 状态菜单的
@@ -37,6 +47,7 @@ Tap 合并不自动升级 M1、M2、M5。设备日常优先使用产品自更新
 
 ```sh
 brew upgrade oh-my-brew/tap/omcli
+brew upgrade oh-my-brew/tap/scaletail
 brew upgrade --cask oh-my-brew/tap/minitools
 ```
 

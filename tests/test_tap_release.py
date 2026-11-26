@@ -1,4 +1,6 @@
 import importlib.util
+import hashlib
+import json
 from pathlib import Path
 import unittest
 from unittest.mock import patch
@@ -187,6 +189,47 @@ class ReconcileTests(unittest.TestCase):
         self.assertIn(unittest.mock.call('compare/main...old'), api.call_args_list)
         self.assertEqual(api.call_args.args, ('pulls/62/update-branch', 'PUT', {'expected_head_sha': 'old'}))
         run.assert_not_called()
+
+
+class ScaletailBottleTests(unittest.TestCase):
+    def test_formula_uses_release_digest_and_preserves_recipe(self):
+        recipe = (ROOT / m.SCALETAIL).read_text()
+        source = ("1.104.7", "a" * 40)
+        release = {
+            "draft": False, "prerelease": False, "target_commitish": "b" * 40,
+            "body": f"Source commit `{source[1]}`.",
+            "assets": [{"name": m.scaletail_archive(source[0]), "state": "uploaded",
+                        "size": 1, "digest": "sha256:" + "c" * 64}],
+        }
+        with patch.object(m, "content", return_value=recipe):
+            formula = m.scaletail_published_formula(release, source)
+            with self.assertRaisesRegex(ValueError, "tested build source"):
+                m.scaletail_published_formula(release, (source[0], "d" * 40))
+        self.assertIn(f'arm64_golden_gate: "{"c" * 64}"', formula)
+        self.assertEqual(m.scaletail_formula(formula, source), m.scaletail_formula(recipe, source))
+
+    def test_mismatching_bottle_bytes_are_rejected(self):
+        version = "1.104.7"
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp)
+            prefix = f"scaletail--{version}.{m.SCALETAIL_TAG}.bottle"
+            archive = directory / f"{prefix}.tar.gz"
+            contents = b"fixture"
+            digest = hashlib.sha256(contents).hexdigest()
+            archive.write_bytes(contents)
+            (directory / f"{prefix}.json").write_text(json.dumps({
+                "oh-my-brew/tap/scaletail": {
+                    "formula": {"pkg_version": version},
+                    "bottle": {"rebuild": 0, "tags": {m.SCALETAIL_TAG: {
+                        "cellar": "any_skip_relocation", "sha256": digest,
+                        "filename": m.scaletail_archive(version), "local_filename": archive.name,
+                    }}},
+                },
+            }))
+            self.assertEqual(m.scaletail_digest(directory, version), (archive, digest))
+            archive.write_bytes(b"wrong bytes")
+            with self.assertRaisesRegex(ValueError, "SHA-256 mismatch"):
+                m.scaletail_digest(directory, version)
 
 
 if __name__ == '__main__':

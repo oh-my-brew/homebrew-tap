@@ -1,0 +1,100 @@
+name: Scaletail stable bottle
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: scaletail-stable-bottle
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: xcode-27
+    timeout-minutes: 35
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: '1'
+      HOMEBREW_NO_AUTOREMOVE: '1'
+      HOMEBREW_NO_INSTALL_CLEANUP: '1'
+    outputs:
+      version: ${{ steps.plan.outputs.version }}
+      build: ${{ steps.plan.outputs.build }}
+      revision: ${{ steps.plan.outputs.revision }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Select the next stable source
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/tap_release.py scaletail-plan --directory "$RUNNER_TEMP/scaletail"
+      - name: Set up Homebrew
+        if: steps.plan.outputs.build == 'true'
+        uses: Homebrew/actions/setup-homebrew@1f8e202ffddf94def7f42f6fa3a482e821489f9c # 2026.07.10.1
+        with:
+          stable: true
+      - name: Build and test an Apple Silicon macOS 27 Bottle
+        if: steps.plan.outputs.build == 'true'
+        env:
+          VERSION: ${{ steps.plan.outputs.version }}
+        run: |
+          set -euo pipefail
+          [[ "$(uname -m)" == arm64 && "$(sw_vers -productVersion)" == 27.* ]]
+          brew tap oh-my-brew/tap
+          cp "$RUNNER_TEMP/scaletail/scaletail.rb" "$(brew --repository oh-my-brew/tap)/Formula/scaletail.rb"
+          formula=oh-my-brew/tap/scaletail
+          brew install --build-bottle "$formula"
+          cd "$RUNNER_TEMP/scaletail"
+          brew bottle --json --no-rebuild "$formula"
+          brew uninstall "$formula"
+          brew install "./scaletail--$VERSION.arm64_golden_gate.bottle.tar.gz"
+          brew info --json=v2 --formula "$formula" |
+            jq -e '.formulae[0].installed | length == 1 and all(.poured_from_bottle and (.runtime_dependencies | length == 0))'
+          brew test "$formula"
+          for executable in scaletail scaletaild; do
+            [[ "$(lipo -archs "$(brew --prefix "$formula")/bin/$executable")" == arm64 ]]
+          done
+      - name: Store the tested Bottle
+        if: steps.plan.outputs.build == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: scaletail-arm64-golden-gate
+          path: ${{ runner.temp }}/scaletail/*.bottle.*
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    if: needs.build.outputs.version != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: read
+    env:
+      VERSION: ${{ needs.build.outputs.version }}
+      SOURCE_REVISION: ${{ needs.build.outputs.revision }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Retrieve the tested Bottle
+        if: needs.build.outputs.build == 'true'
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: scaletail-arm64-golden-gate
+          path: ${{ runner.temp }}/scaletail
+      - name: Publish the validated Bottle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/tap_release.py scaletail-publish --version "$VERSION" --directory "$RUNNER_TEMP/scaletail"
+      - name: Open a version PR for manual review
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_BUMP_TOKEN }}
+        run: python3 scripts/tap_release.py scaletail-pr --version "$VERSION"

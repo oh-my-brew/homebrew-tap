@@ -87,9 +87,9 @@ Tap 每天检查一次这些 Release，并通过 Homebrew `bump-packages` 自动
 resource owner 为 `oh-my-brew`，选定仓库为 `homebrew-tap`；仅凭 secret 名称存在
 不能确认新组织下的访问权限。未配置时工作流会明确失败，避免把没有更新的软件包标为同步成功。
 
-`scaletail` 直接跟随 Tailscale 官方稳定 tag，通过同一 Autobump 工作流更新，不需要
-单独维护源码仓库。Formula 仅把安装的 CLI、daemon、服务和补全文件改为 `scaletail`
-命名；内部版本信息、协议和网络行为仍属于 Tailscale。
+`scaletail` 每天检查 Tailscale 官方稳定版。CI 为 Apple Silicon、macOS 27 构建和
+发布 Bottle，再创建人工审核的 Tap PR。对应平台的常规安装和升级直接使用 Bottle，
+Go 只用于源码构建。CLI、daemon、服务和补全文件沿用 `scaletail` 命名。
 
 `minitools` 下载产品仓库已构建的 Apple Silicon 正式ZIP，包含 Developer ID、Hardened Runtime、Apple 公证和 stapled ticket。
 发行版本使用 `YYYY.MM.DD.N`，其中 `N` 是从 `1` 开始的当日发布序号；应用内、GitHub

@@ -2,14 +2,19 @@ class Scaletail < Formula
   desc "Tailscale CLI and daemon installed with scaletail command names"
   homepage "https://tailscale.com"
   url "https://github.com/tailscale/tailscale.git",
-      tag:      "v1.104.4",
-      revision: "27047635f237d1f3e0b08c0f487674757f30d2f7"
+      tag:      "v1.104.7",
+      revision: "cbc74fe48ef1b1649f69a4d9a602319427e25102"
   license "BSD-3-Clause"
 
   livecheck do
     url :stable
     regex(/^v?(\d+(?:\.\d+)+)$/i)
     strategy :github_latest
+  end
+
+  bottle do
+    root_url "https://github.com/oh-my-brew/homebrew-tap/releases/download/scaletail-v1.104.7"
+    sha256 cellar: :any_skip_relocation, arm64_golden_gate: "409df3c0718ad81debee1646b8714d01188c6b4e3599d213440d6a2df4725746"
   end
 
   depends_on "go" => :build
